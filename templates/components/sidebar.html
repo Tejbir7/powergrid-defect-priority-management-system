@@ -1,0 +1,156 @@
+<aside class="navbar navbar-vertical navbar-expand-lg navbar-light border-end">
+    <div class="container-fluid">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+            <span class="navbar-brand-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M0 0h24v24H0z" fill="none"></path>
+                    <path d="M4 4h6v8H4z"></path>
+                    <path d="M4 16h6v4H4z"></path>
+                    <path d="M14 4h6v4h-6z"></path>
+                    <path d="M14 12h6v8h-6z"></path>
+                </svg>
+            </span>
+            <span class="navbar-brand-title">PowerGrid</span>
+        </a>
+
+        <div class="collapse navbar-collapse" id="sidebarMenu">
+            <ul class="navbar-nav pt-lg-3">
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if active_page == 'dashboard' else '' }}" href="{{ url_for('dashboard') }}">
+                        <span class="nav-link-icon d-inline-flex align-items-center me-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M0 0h24v24H0z" fill="none"></path>
+                                <path d="M4 4h6v8H4z"></path>
+                                <path d="M4 16h6v4H4z"></path>
+                                <path d="M14 4h6v4h-6z"></path>
+                                <path d="M14 12h6v8h-6z"></path>
+                            </svg>
+                        </span>
+                        Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link dropdown-toggle {{ 'active' if active_page in ['defects', 'add_defect'] else '' }}" href="#sidebarMenuDefects" data-bs-toggle="collapse" role="button" aria-expanded="false">
+                        <span class="nav-link-icon d-inline-flex align-items-center me-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M0 0h24v24H0z" fill="none"></path>
+                                <path d="M3 7h18"></path>
+                                <path d="M5 10h14"></path>
+                                <path d="M7 13h10"></path>
+                                <path d="M9 16h6"></path>
+                            </svg>
+                        </span>
+                        Defects
+                    </a>
+                    <div class="collapse {{ 'show' if active_page in ['defects', 'add_defect'] else '' }}" id="sidebarMenuDefects">
+                        <ul class="nav nav-sm flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link ps-5 {{ 'active' if active_page == 'defects' else '' }}" href="{{ url_for('defects') }}">View Defects</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link ps-5 {{ 'active' if active_page == 'add_defect' else '' }}" href="{{ url_for('add_defect') }}">Add Defect</a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if active_page == 'assets' else '' }}" href="{{ url_for('assets') }}">
+                        <span class="nav-link-icon d-inline-flex align-items-center me-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M0 0h24v24H0z" fill="none"></path>
+                                <path d="M4 5h16v14H4z"></path>
+                                <path d="M8 9h8"></path>
+                                <path d="M8 13h6"></path>
+                            </svg>
+                        </span>
+                        Assets
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">
+                        <span class="nav-link-icon d-inline-flex align-items-center me-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M0 0h24v24H0z" fill="none"></path>
+                                <path d="M5 3l14 0"></path>
+                                <path d="M7 6l10 0"></path>
+                                <path d="M4 9l16 0"></path>
+                                <path d="M6 12l12 0"></path>
+                                <path d="M8 15l8 0"></path>
+                                <path d="M10 18l4 0"></path>
+                            </svg>
+                        </span>
+                        Maintenance
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if active_page == 'reports' else '' }}" href="{{ url_for('reports') }}">
+                        <span class="nav-link-icon d-inline-flex align-items-center me-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M0 0h24v24H0z" fill="none"></path>
+                                <path d="M6 3h12v18H6z"></path>
+                                <path d="M9 7h6"></path>
+                                <path d="M9 11h6"></path>
+                                <path d="M9 15h3"></path>
+                            </svg>
+                        </span>
+                        Reports
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">
+                        <span class="nav-link-icon d-inline-flex align-items-center me-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M0 0h24v24H0z" fill="none"></path>
+                                <path d="M12 4v16"></path>
+                                <path d="M4 12h16"></path>
+                            </svg>
+                        </span>
+                        Analytics
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">
+                        <span class="nav-link-icon d-inline-flex align-items-center me-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M0 0h24v24H0z" fill="none"></path>
+                                <path d="M12 12a4 4 0 1 0 -4 -4"></path>
+                                <path d="M16 21v-2a4 4 0 0 0 -4 -4h-1"></path>
+                                <path d="M6 8v-1"></path>
+                            </svg>
+                        </span>
+                        Users
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">
+                        <span class="nav-link-icon d-inline-flex align-items-center me-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M0 0h24v24H0z" fill="none"></path>
+                                <path d="M12 15a3 3 0 1 0 -3 -3"></path>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1 -2.83 2.83l-.06-.06a1.65 1.65 0 0 0 -1.82-.33"></path>
+                                <path d="M4.6 9a1.65 1.65 0 0 0 -1.82-.33l-.06.06a2 2 0 1 1 -2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82"></path>
+                            </svg>
+                        </span>
+                        Settings
+                    </a>
+                </li>
+            </ul>
+
+            <div class="mt-4 pt-3 border-top">
+                <a class="nav-link text-danger" href="{{ url_for('dashboard') }}">
+                    <span class="nav-link-icon d-inline-flex align-items-center me-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M0 0h24v24H0z" fill="none"></path>
+                            <path d="M14 8l-4 4l4 4"></path>
+                            <path d="M10 12h10"></path>
+                        </svg>
+                    </span>
+                    Logout
+                </a>
+            </div>
+        </div>
+    </div>
+</aside>

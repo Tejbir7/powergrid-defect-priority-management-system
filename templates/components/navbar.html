@@ -1,0 +1,62 @@
+<header class="navbar navbar-expand-md navbar-light d-print-none border-bottom py-3">
+    <div class="container-fluid">
+        <a class="navbar-brand d-md-none" href="{{ url_for('dashboard') }}">PowerGrid</a>
+
+        <div class="d-flex order-md-2 ms-auto align-items-center">
+            <form class="me-3 d-none d-md-flex">
+                <div class="input-icon">
+                    <span class="input-icon-addon">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm text-muted" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M0 0h24v24H0z" fill="none"></path>
+                            <circle cx="10" cy="10" r="7"></circle>
+                            <path d="M21 21l-4.35-4.35"></path>
+                        </svg>
+                    </span>
+                    <input class="form-control form-control-flush ps-9" type="search" placeholder="Search defects" aria-label="Search">
+                </div>
+            </form>
+
+            <div class="navbar-nav align-items-center">
+                <div class="nav-item dropdown d-none d-md-flex me-3">
+                    <a class="nav-link px-0 text-muted" href="#" data-bs-toggle="dropdown" aria-label="Notifications">
+                        <span class="badge bg-red badge-notification">3</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M0 0h24v24H0z" fill="none"></path>
+                            <path d="M6 17v-5a6 6 0 0 1 12 0v5"></path>
+                            <path d="M10 21h4"></path>
+                        </svg>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end dropdown-menu-card">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="dropdown-item">No new notifications</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nav-item dropdown">
+                    <a class="nav-link d-flex lh-1 text-reset p-0" href="#" data-bs-toggle="dropdown" aria-label="Profile menu">
+                        <span class="avatar avatar-sm" style="background-image: url('https://ui-avatars.com/api/?name=PD');"></span>
+                        <div class="d-none d-xl-block ps-2">
+                            <div>Senior Engineer</div>
+                            <div class="mt-1 small text-muted">powergrid@example.com</div>
+                        </div>
+                    </a>
+                    <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                        <a class="dropdown-item" href="#">Profile</a>
+                        <a class="dropdown-item" href="#">Settings</a>
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="#">Logout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="navbar-nav d-none d-md-flex">
+            <div class="nav-item">
+                <span class="navbar-text text-muted">PowerGrid Maintenance Tracking</span>
+            </div>
+        </div>
+    </div>
+</header>

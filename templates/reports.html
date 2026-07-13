@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Reports - PowerGrid{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="row align-items-center">
+        <div class="col">
+            <div class="page-pretitle">Reports</div>
+            <h2 class="page-title">Reports</h2>
+            <p class="text-muted">Generate critical maintenance and defect reports for leadership.</p>
+        </div>
+    </div>
+</div>
+
+<div class="row row-deck row-cards">
+    <div class="col-md-6 col-xl-4">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title">Monthly Report</h3>
+                <p class="text-muted">Export operational summaries for the maintenance team.</p>
+                <div class="mt-3">
+                    <button class="btn btn-primary">Export PDF</button>
+                    <button class="btn btn-outline-secondary">Export CSV</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-4">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title">Critical Defect Report</h3>
+                <p class="text-muted">Focus on high-priority issues requiring immediate action.</p>
+                <div class="mt-3">
+                    <button class="btn btn-primary">View Report</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-xl-4">
+        <div class="card">
+            <div class="card-body">
+                <h3 class="card-title">Pending Maintenance</h3>
+                <p class="text-muted">Track upcoming and overdue maintenance items.</p>
+                <div class="mt-3">
+                    <button class="btn btn-primary">Export Excel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

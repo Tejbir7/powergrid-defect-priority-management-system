@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="PowerGrid Maintenance Defect Tracking & Priority Management System">
+    <title>{% block title %}PowerGrid Maintenance Defect Tracking & Priority Management System{% endblock %}</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tabler.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tabler-flags.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tabler-payments.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tabler-socials.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tabler-themes.min.css') }}">
+
+    {% block head %}{% endblock %}
+</head>
+
+<body class="antialiased">
+    <div class="page">
+        {% include 'components/sidebar.html' %}
+
+        <div class="page-wrapper">
+            {% include 'components/navbar.html' %}
+
+            <div class="page-body">
+                <div class="container-xl px-4 py-4">
+                    {% block content %}{% endblock %}
+                </div>
+            </div>
+
+            <footer class="footer footer-transparent d-print-none">
+                <div class="container-xl">
+                    <div class="row align-items-center">
+                        <div class="col text-center">
+                            <p class="mb-0 text-muted">© PowerGrid Management System</p>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/tabler.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/tabler-theme.min.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

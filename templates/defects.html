@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Defects - PowerGrid{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="row align-items-center">
+        <div class="col">
+            <div class="page-pretitle">Defect Management</div>
+            <h2 class="page-title">Defects</h2>
+        </div>
+        <div class="col-auto ms-auto d-print-none">
+            <a href="{{ url_for('add_defect') }}" class="btn btn-primary">Add Defect</a>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table card-table table-vcenter text-nowrap datatable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Asset Name</th>
+                    <th>Location</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Assigned Engineer</th>
+                    <th>Date Reported</th>
+                    <th>Expected Resolution</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>DFT-1024</td>
+                    <td>Transformer T3</td>
+                    <td>New Delhi Substation</td>
+                    <td><span class="badge bg-red">Critical</span></td>
+                    <td><span class="badge bg-yellow">Open</span></td>
+                    <td>Ravi Patel</td>
+                    <td>2026-06-28</td>
+                    <td>2026-07-02</td>
+                    <td>
+                        <a href="#" class="btn btn-sm btn-secondary">View</a>
+                        <a href="#" class="btn btn-sm btn-outline-secondary">Edit</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

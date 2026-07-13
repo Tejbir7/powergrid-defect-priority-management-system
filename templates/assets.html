@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Assets - PowerGrid{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="row align-items-center">
+        <div class="col">
+            <div class="page-pretitle">Asset Management</div>
+            <h2 class="page-title">Assets</h2>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table card-table table-vcenter text-nowrap">
+            <thead>
+                <tr>
+                    <th>Asset ID</th>
+                    <th>Asset Type</th>
+                    <th>Location</th>
+                    <th>Health Status</th>
+                    <th>Last Inspection</th>
+                    <th>Maintenance Due</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>AST-001</td>
+                    <td>Transformer</td>
+                    <td>New Delhi</td>
+                    <td><span class="badge bg-blue">Good</span></td>
+                    <td>2026-06-20</td>
+                    <td>2026-12-15</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

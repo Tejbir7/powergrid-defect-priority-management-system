@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - PowerGrid Maintenance{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="row align-items-center">
+        <div class="col">
+            <div class="page-pretitle">Overview</div>
+            <h2 class="page-title">Dashboard</h2>
+            <p class="page-subtitle text-muted">Track maintenance defects, asset health, and engineering priorities.</p>
+        </div>
+    </div>
+</div>
+
+<div class="row row-deck row-cards">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card card-sm">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="text-muted">Total Assets</div>
+                        <div class="h2">128</div>
+                    </div>
+                    <div class="col-auto">
+                        <span class="bg-blue text-white avatar">A</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card card-sm">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="text-muted">Open Defects</div>
+                        <div class="h2">24</div>
+                    </div>
+                    <div class="col-auto">
+                        <span class="bg-yellow text-white avatar">D</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card card-sm">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="text-muted">Critical Defects</div>
+                        <div class="h2">8</div>
+                    </div>
+                    <div class="col-auto">
+                        <span class="bg-red text-white avatar">C</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card card-sm">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col">
+                        <div class="text-muted">Resolved Defects</div>
+                        <div class="h2">96</div>
+                    </div>
+                    <div class="col-auto">
+                        <span class="bg-teal text-white avatar">R</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Monthly Defect Trend</h3>
+            </div>
+            <div class="card-body">
+                <div class="chart-wrapper">
+                    <div class="chart" id="chart-defect-trend" style="height: 280px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Priority Distribution</h3>
+            </div>
+            <div class="card-body">
+                <div class="chart-wrapper">
+                    <div class="chart" id="chart-priority-distribution" style="height: 280px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row row-cards mt-4">
+    <div class="col-12 col-xl-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Recent Defects</h3>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-vcenter card-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Asset</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Reported</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>DFT-1024</td>
+                            <td>Transformer T3</td>
+                            <td><span class="badge bg-red">Critical</span></td>
+                            <td><span class="badge bg-yellow">Open</span></td>
+                            <td>2026-06-28</td>
+                        </tr>
+                        <tr>
+                            <td>DFT-1025</td>
+                            <td>Breaker B2</td>
+                            <td><span class="badge bg-orange">High</span></td>
+                            <td><span class="badge bg-blue">In Progress</span></td>
+                            <td>2026-06-27</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-xl-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Upcoming Scheduled Maintenance</h3>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-vcenter card-table">
+                    <thead>
+                        <tr>
+                            <th>Asset</th>
+                            <th>Location</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Relay R1</td>
+                            <td>Nagpur Substation</td>
+                            <td>2026-07-05</td>
+                            <td><span class="badge bg-blue">Scheduled</span></td>
+                        </tr>
+                        <tr>
+                            <td>Transmission Line L4</td>
+                            <td>Pune Corridor</td>
+                            <td>2026-07-10</td>
+                            <td><span class="badge bg-muted">Pending</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
