@@ -1,0 +1,18 @@
+#Python 
+env/
+__pycache__/
+*.py[cod] 
+#Ignores compiled Python cache files such as .pyc, .pyo, and .pyd.
+#* means “any filename”; [cod] means one of the letters c, o, or d.
+
+#environments
+.env
+.env.*
+#* ignores other variations too 
+
+#node
+node_modules/
+
+#Build output
+dist/
+build/
