@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Assets - PowerGrid{% endblock %}
+{% block title %}Equipment Defect Summary - PowerGrid{% endblock %}
 
 {% block head %}
 <style>
@@ -29,9 +29,9 @@
 <div class="assets-hero mb-4">
     <div class="row align-items-center g-3">
         <div class="col-12 col-lg">
-            <div class="page-pretitle">Asset Management</div>
-            <h2 class="page-title mb-1">Assets</h2>
-            <p class="page-subtitle text-muted mb-0">Assets are grouped from live defect records. Total, active, and resolved counts update as defects change.</p>
+            <div class="page-pretitle">Defect Tracking</div>
+            <h2 class="page-title mb-1">Equipment Defect Summary</h2>
+            <p class="page-subtitle text-muted mb-0">Equipment is grouped from defect records. Total, active, and resolved counts update as defects change.</p>
         </div>
     </div>
 </div>
@@ -97,7 +97,7 @@
         <table class="table card-table table-vcenter text-nowrap">
             <thead>
                 <tr>
-                    <th>Asset</th>
+                    <th>Equipment</th>
                     <th>Total Defects</th>
                     <th>Active Defects</th>
                     <th>Resolved Defects</th>
@@ -117,7 +117,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="5" class="text-center text-muted py-4">No assets are tracked for the selected time range.</td>
+                    <td colspan="5" class="text-center text-muted py-4">No equipment is tracked for the selected time range.</td>
                 </tr>
                 {% endfor %}
             </tbody>

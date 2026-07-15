@@ -3,7 +3,7 @@
         <a class="navbar-brand d-md-none" href="{{ url_for('dashboard') }}">PowerGrid</a>
 
         <div class="d-flex order-md-2 ms-auto align-items-center">
-            <form class="me-3 d-none d-md-flex">
+            <form method="get" action="{{ url_for('search_defects') }}" class="me-3 d-none d-md-flex gap-2">
                 <div class="input-icon">
                     <span class="input-icon-addon">
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm text-muted" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -12,8 +12,12 @@
                             <path d="M21 21l-4.35-4.35"></path>
                         </svg>
                     </span>
-                    <input class="form-control form-control-flush ps-9" type="search" placeholder="Search defects" aria-label="Search">
+                    <input class="form-control form-control-flush ps-9" type="search" name="q" value="{{ search_query|default('') }}" placeholder="Search asset or defect ID" aria-label="Search by asset name or defect ID">
                 </div>
+                <select class="form-select form-select-sm w-auto" name="scope" aria-label="Defect status to search">
+                    <option value="active" {% if active_page != 'history' %}selected{% endif %}>Active</option>
+                    <option value="resolved" {% if active_page == 'history' %}selected{% endif %}>Resolved</option>
+                </select>
             </form>
 
             <div class="navbar-nav align-items-center">

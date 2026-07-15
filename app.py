@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from flask import Flask, flash, redirect, render_template, request, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
-from sqlalchemy import inspect, text
+from sqlalchemy import inspect, or_, text
 
 load_dotenv()
 app = Flask(__name__)
@@ -36,6 +36,7 @@ class Defect(db.Model):
     assigned_engineer = db.Column(db.String(120), nullable=True)
     date_reported = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     expected_resolution = db.Column(db.DateTime, nullable=True)
+    resolved_at = db.Column(db.DateTime, nullable=True)
 
 
 class Asset(db.Model):
@@ -98,6 +99,23 @@ def build_defect_query(include_resolved=True, start_dt=None, end_dt=None):
     return query.order_by(Defect.date_reported.desc())
 
 
+def apply_defect_search(query, search_term):
+    """Filter defects by asset name or an ID entered as 123 or DFT-123."""
+    if not search_term:
+        return query
+
+    normalized_term = search_term.strip()
+    if not normalized_term:
+        return query
+
+    defect_id = normalized_term.upper().removeprefix("DFT-").strip()
+    filters = [Defect.asset_name.ilike(f"%{normalized_term}%")]
+    if defect_id.isdigit():
+        filters.append(Defect.id == int(defect_id))
+
+    return query.where(or_(*filters))
+
+
 def build_asset_summaries(defects):
     grouped = {}
     for defect in defects:
@@ -141,10 +159,17 @@ def ensure_datetime_schema():
                 return str(column["type"]).upper()
         return ""
 
+    statements = []
+    if not column_type("defects", "resolved_at"):
+        statements.append("ALTER TABLE defects ADD COLUMN resolved_at DATETIME NULL")
+
     if dialect_name not in {"mysql", "mariadb"}:
+        for statement in statements:
+            db.session.execute(text(statement))
+        if statements:
+            db.session.commit()
         return
 
-    statements = []
     if "DATETIME" not in column_type("defects", "date_reported"):
         statements.append(
             "ALTER TABLE defects MODIFY COLUMN date_reported DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP"
@@ -168,7 +193,12 @@ def save_defect_form(defect):
     defect.asset_name = request.form["asset_name"].strip()
     defect.location = request.form["location"].strip()
     defect.priority = request.form["priority"]
-    defect.status = request.form["status"]
+    new_status = request.form["status"]
+    if new_status == "Resolved" and defect.status != "Resolved":
+        defect.resolved_at = datetime.now()
+    elif new_status != "Resolved":
+        defect.resolved_at = None
+    defect.status = new_status
     defect.description = request.form["description"].strip()
     defect.assigned_engineer = request.form["assigned_engineer"].strip()
 
@@ -179,6 +209,13 @@ def home():
     return redirect(url_for("dashboard"))
 
 
+@app.route("/search-defects")
+def search_defects():
+    """Send a header search to the active or resolved defect list."""
+    destination = "defect_history" if request.args.get("scope") == "resolved" else "defects"
+    return redirect(url_for(destination, q=request.args.get("q", "").strip()))
+
+
 @app.route("/dashboard")
 def dashboard():
     active_defects = db.session.execute(build_defect_query(include_resolved=False)).scalars().all()
@@ -186,14 +223,17 @@ def dashboard():
     recent_defects = active_defects[:5]
     status_counts = Counter(defect.status for defect in active_defects)
     priority_counts = Counter(defect.priority for defect in active_defects)
+    now = datetime.now()
+    start_of_today = datetime.combine(date.today(), datetime.min.time())
+    resolved_today = db.session.execute(
+        db.select(Defect).where(
+            Defect.status == "Resolved",
+            Defect.resolved_at >= start_of_today,
+            Defect.resolved_at <= now,
+        )
+    ).scalars().all()
 
     dashboard_cards = [
-        {
-            "label": "Active Defects",
-            "value": len(active_defects),
-            "icon": "A",
-            "tone": "bg-blue",
-        },
         {
             "label": "Open",
             "value": status_counts.get("Open", 0),
@@ -201,16 +241,26 @@ def dashboard():
             "tone": "bg-yellow",
         },
         {
-            "label": "In Progress",
-            "value": status_counts.get("In Progress", 0),
-            "icon": "P",
+            "label": "Overdue",
+            "value": sum(
+                defect.expected_resolution is not None
+                and defect.expected_resolution < now
+                for defect in active_defects
+            ),
+            "icon": "!",
+            "tone": "bg-red",
+        },
+        {
+            "label": "Unassigned",
+            "value": sum(not (defect.assigned_engineer or "").strip() for defect in active_defects),
+            "icon": "U",
             "tone": "bg-azure",
         },
         {
-            "label": "Critical",
-            "value": priority_counts.get("Critical", 0),
-            "icon": "C",
-            "tone": "bg-red",
+            "label": "Resolved Today",
+            "value": len(resolved_today),
+            "icon": "R",
+            "tone": "bg-green",
         },
     ]
 
@@ -250,8 +300,12 @@ def dashboard():
 @app.route("/defects")
 def defects():
     start_dt, end_dt, selected_range = resolve_time_window()
+    search_query = request.args.get("q", "").strip()
+    query = build_defect_query(
+        include_resolved=False, start_dt=start_dt, end_dt=end_dt
+    )
     all_defects = db.session.execute(
-        build_defect_query(include_resolved=False, start_dt=start_dt, end_dt=end_dt)
+        apply_defect_search(query, search_query)
     ).scalars().all()
     selected_defect_id = request.args.get("defect_id", type=int)
     selected_defect = next((defect for defect in all_defects if defect.id == selected_defect_id), None)
@@ -268,14 +322,21 @@ def defects():
         selected_range=selected_range,
         filter_start=request.args.get("start", ""),
         filter_end=request.args.get("end", ""),
+        search_query=search_query,
     )
 
 
 @app.route("/defect-history")
 def defect_history():
     start_dt, end_dt, selected_range = resolve_time_window()
+    search_query = request.args.get("q", "").strip()
     resolved_defects = db.session.execute(
-        build_defect_query(include_resolved="resolved-only", start_dt=start_dt, end_dt=end_dt)
+        apply_defect_search(
+            build_defect_query(
+                include_resolved="resolved-only", start_dt=start_dt, end_dt=end_dt
+            ),
+            search_query,
+        )
     ).scalars().all()
     selected_defect_id = request.args.get("defect_id", type=int)
     selected_defect = next((defect for defect in resolved_defects if defect.id == selected_defect_id), None)
@@ -291,6 +352,7 @@ def defect_history():
         selected_range=selected_range,
         filter_start=request.args.get("start", ""),
         filter_end=request.args.get("end", ""),
+        search_query=search_query,
     )
 
 #CREATE: show table and save a new defect
@@ -336,6 +398,8 @@ def delete_defect(defect_id):
     db.session.commit()
 
     flash("Defect deleted successfully.", "success")
+    if request.form.get("return_to") == "history":
+        return redirect(url_for("defect_history"))
     return redirect(url_for("defects"))
 
 @app.route("/assets")

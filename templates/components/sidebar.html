@@ -33,7 +33,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link dropdown-toggle {{ 'active' if active_page in ['defects', 'add_defect'] else '' }}" href="#sidebarMenuDefects" data-bs-toggle="collapse" role="button" aria-expanded="false">
+                    <a class="nav-link dropdown-toggle {{ 'active' if active_page in ['defects', 'add_defect', 'history'] else '' }}" href="#sidebarMenuDefects" data-bs-toggle="collapse" role="button" aria-expanded="false">
                         <span class="nav-link-icon d-inline-flex align-items-center me-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M0 0h24v24H0z" fill="none"></path>
@@ -45,13 +45,16 @@
                         </span>
                         Defects
                     </a>
-                    <div class="collapse {{ 'show' if active_page in ['defects', 'add_defect'] else '' }}" id="sidebarMenuDefects">
+                    <div class="collapse {{ 'show' if active_page in ['defects', 'add_defect', 'history'] else '' }}" id="sidebarMenuDefects">
                         <ul class="nav nav-sm flex-column">
                             <li class="nav-item">
-                                <a class="nav-link ps-5 {{ 'active' if active_page == 'defects' else '' }}" href="{{ url_for('defects') }}">View Defects</a>
+                                <a class="nav-link ps-5 {{ 'active' if active_page == 'add_defect' else '' }}" href="{{ url_for('add_defect') }}">Add Defect</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link ps-5 {{ 'active' if active_page == 'add_defect' else '' }}" href="{{ url_for('add_defect') }}">Add Defect</a>
+                                <a class="nav-link ps-5 {{ 'active' if active_page == 'defects' else '' }}" href="{{ url_for('defects') }}">View Open Defects</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link ps-5 {{ 'active' if active_page == 'history' else '' }}" href="{{ url_for('defect_history') }}">View Resolved Defects</a>
                             </li>
                         </ul>
                     </div>
@@ -66,10 +69,11 @@
                                 <path d="M8 13h6"></path>
                             </svg>
                         </span>
-                        Assets
+                        Equipment Defect Summary
                     </a>
                 </li>
-                <li class="nav-item">
+                {# Maintenance is hidden until its scheduling workflow is implemented. #}
+                {# <li class="nav-item">
                     <a class="nav-link" href="#">
                         <span class="nav-link-icon d-inline-flex align-items-center me-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -84,7 +88,7 @@
                         </span>
                         Maintenance
                     </a>
-                </li>
+                </li> #}
                 <li class="nav-item">
                     <a class="nav-link {{ 'active' if active_page == 'reports' else '' }}" href="{{ url_for('reports') }}">
                         <span class="nav-link-icon d-inline-flex align-items-center me-2">
@@ -97,18 +101,6 @@
                             </svg>
                         </span>
                         Reports
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {{ 'active' if active_page == 'history' else '' }}" href="{{ url_for('defect_history') }}">
-                        <span class="nav-link-icon d-inline-flex align-items-center me-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M0 0h24v24H0z" fill="none"></path>
-                                <path d="M12 4v16"></path>
-                                <path d="M4 12h16"></path>
-                            </svg>
-                        </span>
-                        Defect History
                     </a>
                 </li>
                 <li class="nav-item">

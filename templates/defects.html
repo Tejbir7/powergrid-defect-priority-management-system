@@ -19,6 +19,7 @@
 <div class="card mb-4">
     <div class="card-body">
         <form method="get" class="row g-3 align-items-end">
+            <input type="hidden" name="q" value="{{ search_query }}">
             <div class="col-12 col-md-3">
                 <label class="form-label">Time Range</label>
                 <select name="range" class="form-select">
@@ -51,6 +52,7 @@
             <input type="hidden" name="range" value="{{ selected_range }}">
             <input type="hidden" name="start" value="{{ filter_start }}">
             <input type="hidden" name="end" value="{{ filter_end }}">
+            <input type="hidden" name="q" value="{{ search_query }}">
             <div class="col-12 col-md-8">
                 <label class="form-label">Select Defect</label>
                 <select name="defect_id" class="form-select" onchange="this.form.submit()">
@@ -92,6 +94,7 @@
         <table class="table card-table table-vcenter text-nowrap datatable">
             <thead>
                 <tr>
+                    <th>S. No.</th>
                     <th>ID</th>
                     <th>Asset Name</th>
                     <th>Location</th>
@@ -106,6 +109,7 @@
             <tbody>
                 {% for defect in defects %}
                 <tr>
+                    <td>{{ loop.index }}</td>
                     <td>DFT-{{ defect.id }}</td>
                     <td>{{ defect.asset_name }}</td>
                     <td>{{ defect.location }}</td>
@@ -132,7 +136,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="9" class="text-center text-muted py-4">No active defects match the selected time range.</td>
+                    <td colspan="10" class="text-center text-muted py-4">No active defects match the selected filters.</td>
                 </tr>
                 {% endfor %}
             </tbody>
