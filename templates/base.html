@@ -42,6 +42,36 @@
 
     <script src="{{ url_for('static', filename='js/tabler.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/tabler-theme.min.js') }}"></script>
+    <script>
+        (function () {
+            const storageKey = 'powergrid-theme';
+            const root = document.documentElement;
+
+            function applyTheme(theme) {
+                const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
+                root.setAttribute('data-bs-theme', resolvedTheme);
+                localStorage.setItem(storageKey, resolvedTheme);
+
+                const toggleButton = document.getElementById('themeToggle');
+                if (toggleButton) {
+                    toggleButton.textContent = resolvedTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
+                }
+            }
+
+            const savedTheme = localStorage.getItem(storageKey) || 'light';
+            applyTheme(savedTheme);
+
+            window.addEventListener('DOMContentLoaded', function () {
+                const toggleButton = document.getElementById('themeToggle');
+                if (toggleButton) {
+                    toggleButton.addEventListener('click', function () {
+                        const currentTheme = root.getAttribute('data-bs-theme') || 'light';
+                        applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+                    });
+                }
+            });
+        })();
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

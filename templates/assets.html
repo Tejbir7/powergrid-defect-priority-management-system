@@ -2,12 +2,92 @@
 
 {% block title %}Assets - PowerGrid{% endblock %}
 
+{% block head %}
+<style>
+    .assets-hero {
+        background: linear-gradient(135deg, rgba(35, 102, 173, 0.08), rgba(45, 212, 191, 0.08));
+        border: 1px solid rgba(98, 105, 118, 0.12);
+        border-radius: 1rem;
+        padding: 1.25rem;
+    }
+
+    .stat-card-value {
+        font-size: 1.6rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .stat-card-value {
+        font-size: 1.6rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="page-header d-print-none">
-    <div class="row align-items-center">
-        <div class="col">
+<div class="assets-hero mb-4">
+    <div class="row align-items-center g-3">
+        <div class="col-12 col-lg">
             <div class="page-pretitle">Asset Management</div>
-            <h2 class="page-title">Assets</h2>
+            <h2 class="page-title mb-1">Assets</h2>
+            <p class="page-subtitle text-muted mb-0">Assets are grouped from live defect records. Total, active, and resolved counts update as defects change.</p>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-12 col-md-3">
+                <label class="form-label">Time Range</label>
+                <select name="range" class="form-select">
+                    {% for option in ['all', 'today', '7d', '30d', 'custom'] %}
+                    <option value="{{ option }}" {% if selected_range == option %}selected{% endif %}>
+                        {{ 'All time' if option == 'all' else ('Today' if option == 'today' else ('Last 7 days' if option == '7d' else ('Last 30 days' if option == '30d' else 'Custom'))) }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label">Start</label>
+                <input type="datetime-local" name="start" class="form-control" value="{{ filter_start }}">
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label">End</label>
+                <input type="datetime-local" name="end" class="form-control" value="{{ filter_end }}">
+            </div>
+            <div class="col-12 col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-grow-1">Filter</button>
+                <a href="{{ url_for('assets') }}" class="btn btn-outline-secondary">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row row-deck row-cards mb-4">
+    <div class="col-12 col-sm-4">
+        <div class="card card-sm h-100">
+            <div class="card-body">
+                <div class="text-muted">Total Defects</div>
+                <div class="stat-card-value">{{ total_defects }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-4">
+        <div class="card card-sm h-100">
+            <div class="card-body">
+                <div class="text-muted">Active Defects</div>
+                <div class="stat-card-value">{{ active_defects }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-4">
+        <div class="card card-sm h-100">
+            <div class="card-body">
+                <div class="text-muted">Resolved Defects</div>
+                <div class="stat-card-value">{{ resolved_defects }}</div>
+            </div>
         </div>
     </div>
 </div>
@@ -17,23 +97,29 @@
         <table class="table card-table table-vcenter text-nowrap">
             <thead>
                 <tr>
-                    <th>Asset ID</th>
-                    <th>Asset Type</th>
-                    <th>Location</th>
-                    <th>Health Status</th>
-                    <th>Last Inspection</th>
-                    <th>Maintenance Due</th>
+                    <th>Asset</th>
+                    <th>Total Defects</th>
+                    <th>Active Defects</th>
+                    <th>Resolved Defects</th>
+                    <th>Last Activity</th>
                 </tr>
             </thead>
             <tbody>
+                {% for asset in assets %}
                 <tr>
-                    <td>AST-001</td>
-                    <td>Transformer</td>
-                    <td>New Delhi</td>
-                    <td><span class="badge bg-blue">Good</span></td>
-                    <td>2026-06-20</td>
-                    <td>2026-12-15</td>
+                    <td class="fw-medium">{{ asset.asset_name }}</td>
+                    <td>
+                        {{ asset.total_defects }}
+                    </td>
+                    <td>{{ asset.active_defects }}</td>
+                    <td>{{ asset.resolved_defects }}</td>
+                    <td>{{ asset.last_activity.strftime('%Y-%m-%d %H:%M') if asset.last_activity else '-' }}</td>
                 </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-4">No assets are tracked for the selected time range.</td>
+                </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>
