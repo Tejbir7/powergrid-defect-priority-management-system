@@ -2,110 +2,98 @@
 
 {% block title %}Dashboard - PowerGrid Maintenance{% endblock %}
 
+{% block head %}
+<style>
+    .dashboard-hero {
+        background: linear-gradient(135deg, rgba(16, 94, 165, 0.08), rgba(34, 197, 94, 0.06));
+        border: 1px solid rgba(98, 105, 118, 0.12);
+        border-radius: 1rem;
+        padding: 1.25rem;
+    }
+
+    .metric-icon {
+        width: 2.75rem;
+        height: 2.75rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        font-weight: 700;
+        color: #fff;
+    }
+
+    .metric-value {
+        font-size: 1.75rem;
+        line-height: 1;
+        font-weight: 700;
+    }
+
+    .summary-list {
+        display: grid;
+        gap: 0.9rem;
+    }
+
+    .summary-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+    .summary-bar {
+        height: 0.5rem;
+        border-radius: 999px;
+        background: rgba(98, 105, 118, 0.12);
+        overflow: hidden;
+    }
+
+    .summary-bar > span {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #206bc4, #2fb344);
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="page-header d-print-none">
-    <div class="row align-items-center">
-        <div class="col">
+<div class="dashboard-hero mb-4">
+    <div class="row align-items-center g-3">
+        <div class="col-12 col-lg">
             <div class="page-pretitle">Overview</div>
-            <h2 class="page-title">Dashboard</h2>
-            <p class="page-subtitle text-muted">Track maintenance defects, asset health, and engineering priorities.</p>
+            <h2 class="page-title mb-1">Dashboard</h2>
+            <p class="page-subtitle text-muted mb-0">Showing active defects only. Resolved items move to defect history.</p>
+        </div>
+        <div class="col-12 col-lg-auto">
+            <a href="{{ url_for('add_defect') }}" class="btn btn-primary w-100 w-lg-auto">Add Defect</a>
         </div>
     </div>
 </div>
 
 <div class="row row-deck row-cards">
-    <div class="col-sm-6 col-xl-3">
-        <div class="card card-sm">
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col">
-                        <div class="text-muted">Total Assets</div>
-                        <div class="h2">128</div>
-                    </div>
-                    <div class="col-auto">
-                        <span class="bg-blue text-white avatar">A</span>
-                    </div>
+    {% for card in dashboard_cards %}
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="card card-sm h-100">
+            <div class="card-body d-flex align-items-center justify-content-between gap-3">
+                <div>
+                    <div class="text-muted">{{ card.label }}</div>
+                    <div class="metric-value">{{ card.value }}</div>
                 </div>
+                <span class="metric-icon {{ card.tone }}">{{ card.icon }}</span>
             </div>
         </div>
     </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card card-sm">
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col">
-                        <div class="text-muted">Open Defects</div>
-                        <div class="h2">24</div>
-                    </div>
-                    <div class="col-auto">
-                        <span class="bg-yellow text-white avatar">D</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card card-sm">
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col">
-                        <div class="text-muted">Critical Defects</div>
-                        <div class="h2">8</div>
-                    </div>
-                    <div class="col-auto">
-                        <span class="bg-red text-white avatar">C</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-sm-6 col-xl-3">
-        <div class="card card-sm">
-            <div class="card-body">
-                <div class="row align-items-center">
-                    <div class="col">
-                        <div class="text-muted">Resolved Defects</div>
-                        <div class="h2">96</div>
-                    </div>
-                    <div class="col-auto">
-                        <span class="bg-teal text-white avatar">R</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% endfor %}
 </div>
 
 <div class="row mt-4">
-    <div class="col-lg-8">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Monthly Defect Trend</h3>
-            </div>
-            <div class="card-body">
-                <div class="chart-wrapper">
-                    <div class="chart" id="chart-defect-trend" style="height: 280px;"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-4">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Priority Distribution</h3>
-            </div>
-            <div class="card-body">
-                <div class="chart-wrapper">
-                    <div class="chart" id="chart-priority-distribution" style="height: 280px;"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row row-cards mt-4">
-    <div class="col-12 col-xl-6">
-        <div class="card">
+    <div class="col-12 col-xl-7">
+        <div class="card h-100">
             <div class="card-header">
                 <h3 class="card-title">Recent Defects</h3>
             </div>
@@ -121,57 +109,99 @@
                         </tr>
                     </thead>
                     <tbody>
+                        {% for defect in recent_defects %}
                         <tr>
-                            <td>DFT-1024</td>
-                            <td>Transformer T3</td>
-                            <td><span class="badge bg-red">Critical</span></td>
-                            <td><span class="badge bg-yellow">Open</span></td>
-                            <td>2026-06-28</td>
+                            <td>DFT-{{ defect.id }}</td>
+                            <td>
+                                <div class="fw-medium">{{ defect.asset_name }}</div>
+                                <div class="text-muted small">{{ defect.location }}</div>
+                            </td>
+                            <td>
+                                <span class="badge {% if defect.priority == 'Critical' %}bg-red{% elif defect.priority == 'High' %}bg-orange{% elif defect.priority == 'Medium' %}bg-yellow{% else %}bg-green{% endif %}">
+                                    {{ defect.priority }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge {% if defect.status == 'Resolved' %}bg-green{% elif defect.status == 'In Progress' %}bg-azure{% else %}bg-yellow{% endif %}">
+                                    {{ defect.status }}
+                                </span>
+                            </td>
+                            <td>{{ defect.date_reported.strftime('%Y-%m-%d %H:%M') if defect.date_reported else '-' }}</td>
                         </tr>
+                        {% else %}
                         <tr>
-                            <td>DFT-1025</td>
-                            <td>Breaker B2</td>
-                            <td><span class="badge bg-orange">High</span></td>
-                            <td><span class="badge bg-blue">In Progress</span></td>
-                            <td>2026-06-27</td>
+                            <td colspan="5" class="text-center text-muted py-4">No defects have been created yet.</td>
                         </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
-    <div class="col-12 col-xl-6">
-        <div class="card">
+    <div class="col-12 col-xl-5 mt-4 mt-xl-0">
+        <div class="card h-100">
             <div class="card-header">
-                <h3 class="card-title">Upcoming Scheduled Maintenance</h3>
+                <h3 class="card-title">Defect Breakdown</h3>
             </div>
-            <div class="table-responsive">
-                <table class="table table-vcenter card-table">
-                    <thead>
-                        <tr>
-                            <th>Asset</th>
-                            <th>Location</th>
-                            <th>Date</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Relay R1</td>
-                            <td>Nagpur Substation</td>
-                            <td>2026-07-05</td>
-                            <td><span class="badge bg-blue">Scheduled</span></td>
-                        </tr>
-                        <tr>
-                            <td>Transmission Line L4</td>
-                            <td>Pune Corridor</td>
-                            <td>2026-07-10</td>
-                            <td><span class="badge bg-muted">Pending</span></td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div class="card-body">
+                <div class="summary-list mb-4">
+                    <div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted fw-medium">Priority</span>
+                            <span class="text-muted small">{{ total_defects }} total defects</span>
+                        </div>
+                        <div class="summary-list">
+                            {% for item in priority_breakdown %}
+                            <div>
+                                <div class="summary-row mb-1">
+                                    <span>{{ item.label }}</span>
+                                    <span class="text-muted">{{ item.count }}</span>
+                                </div>
+                                <div class="summary-bar">
+                                    <span data-progress="{{ item.progress }}"></span>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="text-muted">No priority data yet.</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted fw-medium">Status</span>
+                        </div>
+                        <div class="summary-list">
+                            {% for item in status_breakdown %}
+                            <div>
+                                <div class="summary-row mb-1">
+                                    <span>{{ item.label }}</span>
+                                    <span class="text-muted">{{ item.count }}</span>
+                                </div>
+                                <div class="summary-bar">
+                                    <span data-progress="{{ item.progress }}"></span>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="text-muted">No status data yet.</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="alert alert-info mb-0">
+                    Active defects are shown here. Resolved defects are archived in defect history.
+                </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.querySelectorAll('[data-progress]').forEach((bar) => {
+        var progress = Number(bar.dataset.progress || 0);
+        bar.style.width = Math.max(0, Math.min(progress, 100)) + '%';
+    });
+</script>
 {% endblock %}

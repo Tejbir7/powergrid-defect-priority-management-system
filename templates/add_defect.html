@@ -1,61 +1,84 @@
 {% extends "base.html" %}
 
-{% block title %}Add Defect - PowerGrid{% endblock %}
+{% block title %}
+    {% if defect %}Edit Defect{% else %}Add Defect{% endif %} - PowerGrid
+{% endblock %}
 
 {% block content %}
 <div class="page-header d-print-none">
     <div class="row align-items-center">
         <div class="col">
             <div class="page-pretitle">Defect Management</div>
-            <h2 class="page-title">Add Defect</h2>
+            <h2 class="page-title">
+                {% if defect %}Edit Defect DFT-{{ defect.id }}{% else %}Add Defect{% endif %}
+            </h2>
         </div>
     </div>
 </div>
 
 <div class="card">
     <div class="card-body">
-        <form>
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label">Asset Name</label>
-                    <input type="text" class="form-control" placeholder="Transformer T3">
+                    <input type="text" name="asset_name" class="form-control"
+                           value="{{ defect.asset_name if defect else '' }}" required>
                 </div>
+
                 <div class="col-md-6">
                     <label class="form-label">Location</label>
-                    <input type="text" class="form-control" placeholder="New Delhi Substation">
+                    <input type="text" name="location" class="form-control"
+                           value="{{ defect.location if defect else '' }}" required>
                 </div>
+
                 <div class="col-md-6">
                     <label class="form-label">Priority</label>
-                    <select class="form-select">
-                        <option>Low</option>
-                        <option>Medium</option>
-                        <option selected>High</option>
-                        <option>Critical</option>
+                    <select name="priority" class="form-select" required>
+                        {% for option in ['Low', 'Medium', 'High', 'Critical'] %}
+                        <option value="{{ option }}"
+                            {% if defect and defect.priority == option %}selected{% endif %}>
+                            {{ option }}
+                        </option>
+                        {% endfor %}
                     </select>
                 </div>
+
                 <div class="col-md-6">
                     <label class="form-label">Status</label>
-                    <select class="form-select">
-                        <option selected>Open</option>
-                        <option>In Progress</option>
-                        <option>Resolved</option>
+                    <select name="status" class="form-select" required>
+                        {% for option in ['Open', 'In Progress', 'Resolved'] %}
+                        <option value="{{ option }}"
+                            {% if defect and defect.status == option %}selected{% endif %}>
+                            {{ option }}
+                        </option>
+                        {% endfor %}
                     </select>
                 </div>
+
                 <div class="col-12">
                     <label class="form-label">Description</label>
-                    <textarea class="form-control" rows="4" placeholder="Describe the defect..."></textarea>
+                    <textarea name="description" class="form-control" rows="4">{{ defect.description if defect else '' }}</textarea>
                 </div>
+
                 <div class="col-md-6">
                     <label class="form-label">Assigned Engineer</label>
-                    <input type="text" class="form-control" placeholder="Ravi Patel">
+                    <input type="text" name="assigned_engineer" class="form-control"
+                           value="{{ defect.assigned_engineer if defect else '' }}">
                 </div>
+
                 <div class="col-md-6">
                     <label class="form-label">Expected Resolution</label>
-                    <input type="date" class="form-control">
+                      <input type="datetime-local" name="expected_resolution" class="form-control"
+                          value="{{ defect.expected_resolution.strftime('%Y-%m-%dT%H:%M') if defect and defect.expected_resolution else '' }}">
                 </div>
             </div>
+
             <div class="mt-4">
-                <button type="submit" class="btn btn-primary">Save Defect</button>
+                <button type="submit" class="btn btn-primary">
+                    {% if defect %}Save Changes{% else %}Save Defect{% endif %}
+                </button>
                 <a href="{{ url_for('defects') }}" class="btn btn-link">Cancel</a>
             </div>
         </form>

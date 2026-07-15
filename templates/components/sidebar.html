@@ -100,7 +100,7 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">
+                    <a class="nav-link {{ 'active' if active_page == 'history' else '' }}" href="{{ url_for('defect_history') }}">
                         <span class="nav-link-icon d-inline-flex align-items-center me-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M0 0h24v24H0z" fill="none"></path>
@@ -108,7 +108,7 @@
                                 <path d="M4 12h16"></path>
                             </svg>
                         </span>
-                        Analytics
+                        Defect History
                     </a>
                 </li>
                 <li class="nav-item">
@@ -136,6 +136,11 @@
                         </span>
                         Settings
                     </a>
+                    <div class="px-3 pt-2">
+                        <button type="button" id="themeToggle" class="btn btn-sm btn-outline-secondary w-100">
+                            Dark Mode
+                        </button>
+                    </div>
                 </li>
             </ul>
 

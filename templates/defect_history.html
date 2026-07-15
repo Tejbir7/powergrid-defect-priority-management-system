@@ -1,17 +1,50 @@
 {% extends "base.html" %}
 
-{% block title %}Defects - PowerGrid{% endblock %}
+{% block title %}Defect History - PowerGrid{% endblock %}
+
+{% block head %}
+<style>
+    .history-hero {
+        background: linear-gradient(135deg, rgba(98, 105, 118, 0.08), rgba(45, 212, 191, 0.08));
+        border: 1px solid rgba(98, 105, 118, 0.12);
+        border-radius: 1rem;
+        padding: 1.25rem;
+    }
+
+    .history-card-value {
+        font-size: 1.6rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .history-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.35rem 0.6rem;
+        border-radius: 999px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        background: rgba(47, 179, 68, 0.15);
+        color: #206b2f;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="page-header d-print-none">
-    <div class="row align-items-center">
-        <div class="col">
-            <div class="page-pretitle">Defect Management</div>
-            <h2 class="page-title">Active Defects</h2>
-            <p class="text-muted mb-0">Only open and in-progress defects are shown here. Resolved defects are moved to defect history.</p>
+<div class="history-hero mb-4">
+    <div class="row align-items-center g-3">
+        <div class="col-12 col-lg">
+            <div class="page-pretitle">Archive</div>
+            <h2 class="page-title mb-1">Defect History</h2>
+            <p class="page-subtitle text-muted mb-0">Resolved defects are archived here so the live dashboard and active defect list stay focused on current work.</p>
         </div>
-        <div class="col-auto ms-auto d-print-none">
-            <a href="{{ url_for('add_defect') }}" class="btn btn-primary">Add Defect</a>
+        <div class="col-12 col-lg-auto">
+            <a href="{{ url_for('defects') }}" class="btn btn-primary w-100 w-lg-auto">View Active Defects</a>
         </div>
     </div>
 </div>
@@ -39,7 +72,7 @@
             </div>
             <div class="col-12 col-md-3 d-flex gap-2">
                 <button type="submit" class="btn btn-primary flex-grow-1">Filter</button>
-                <a href="{{ url_for('defects') }}" class="btn btn-outline-secondary">Reset</a>
+                <a href="{{ url_for('defect_history') }}" class="btn btn-outline-secondary">Reset</a>
             </div>
         </form>
     </div>
@@ -52,11 +85,11 @@
             <input type="hidden" name="start" value="{{ filter_start }}">
             <input type="hidden" name="end" value="{{ filter_end }}">
             <div class="col-12 col-md-8">
-                <label class="form-label">Select Defect</label>
+                <label class="form-label">Select Resolved Defect</label>
                 <select name="defect_id" class="form-select" onchange="this.form.submit()">
                     {% for defect in defects %}
                     <option value="{{ defect.id }}" {% if selected_defect and selected_defect.id == defect.id %}selected{% endif %}>
-                        DFT-{{ defect.id }} | {{ defect.asset_name }} | {{ defect.priority }} | {{ defect.status }} | {{ defect.date_reported.strftime('%Y-%m-%d %H:%M') if defect.date_reported else '-' }}
+                        DFT-{{ defect.id }} | {{ defect.asset_name }} | {{ defect.priority }} | {{ defect.date_reported.strftime('%Y-%m-%d %H:%M') if defect.date_reported else '-' }}
                     </option>
                     {% endfor %}
                 </select>
@@ -69,7 +102,7 @@
         <div class="row g-3 mt-3">
             <div class="col-12 col-lg-6">
                 <div class="border rounded-3 p-3 h-100">
-                    <div class="text-muted small mb-1">Description</div>
+                    <div class="text-muted small mb-1">Resolved Description</div>
                     <div class="fw-medium">{{ selected_defect.asset_name }}</div>
                     <div class="text-muted mt-2">{{ selected_defect.description or 'No description provided.' }}</div>
                 </div>
@@ -87,52 +120,52 @@
     </div>
 </div>
 
+<div class="row row-deck row-cards mb-4">
+    <div class="col-12 col-sm-6 col-xl-4">
+        <div class="card card-sm h-100">
+            <div class="card-body">
+                <div class="text-muted">Resolved Defects</div>
+                <div class="history-card-value">{{ defects|length }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="card">
     <div class="table-responsive">
-        <table class="table card-table table-vcenter text-nowrap datatable">
+        <table class="table card-table table-vcenter text-nowrap">
             <thead>
                 <tr>
                     <th>ID</th>
                     <th>Asset Name</th>
                     <th>Location</th>
                     <th>Priority</th>
-                    <th>Status</th>
                     <th>Assigned Engineer</th>
                     <th>Date Reported</th>
                     <th>Expected Resolution</th>
-                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for defect in defects %}
                 <tr>
                     <td>DFT-{{ defect.id }}</td>
-                    <td>{{ defect.asset_name }}</td>
+                    <td>
+                        <div class="fw-medium">{{ defect.asset_name }}</div>
+                        <div class="text-muted small">Resolved</div>
+                    </td>
                     <td>{{ defect.location }}</td>
                     <td>
                         <span class="badge {% if defect.priority == 'Critical' %}bg-red{% elif defect.priority == 'High' %}bg-orange{% elif defect.priority == 'Medium' %}bg-yellow{% else %}bg-green{% endif %}">
                             {{ defect.priority }}
                         </span>
                     </td>
-                    <td>
-                        <span class="badge {% if defect.status == 'Resolved' %}bg-green{% elif defect.status == 'In Progress' %}bg-azure{% else %}bg-yellow{% endif %}">
-                            {{ defect.status }}
-                        </span>
-                    </td>
                     <td>{{ defect.assigned_engineer or 'Unassigned' }}</td>
-                            <td>{{ defect.date_reported.strftime('%Y-%m-%d %H:%M') if defect.date_reported else '-' }}</td>
+                    <td>{{ defect.date_reported.strftime('%Y-%m-%d %H:%M') if defect.date_reported else '-' }}</td>
                     <td>{{ defect.expected_resolution.strftime('%Y-%m-%d %H:%M') if defect.expected_resolution else '-' }}</td>
-                    <td>
-                        <a href="{{ url_for('edit_defect', defect_id=defect.id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
-                        <form method="POST" action="{{ url_for('delete_defect', defect_id=defect.id) }}" class="d-inline" onsubmit="return confirm('Delete this defect?');">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                        </form>
-                    </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="9" class="text-center text-muted py-4">No active defects match the selected time range.</td>
+                    <td colspan="7" class="text-center text-muted py-4">No resolved defects match the selected time range.</td>
                 </tr>
                 {% endfor %}
             </tbody>

@@ -1,5 +1,7 @@
 #Python 
 env/
+.venv/
+venv/
 __pycache__/
 *.py[cod] 
 #Ignores compiled Python cache files such as .pyc, .pyo, and .pyd.
@@ -9,6 +11,12 @@ __pycache__/
 .env
 .env.*
 #* ignores other variations too 
+
+# Local application data
+instance/
+*.db
+*.sqlite
+*.sqlite3
 
 #node
 node_modules/
