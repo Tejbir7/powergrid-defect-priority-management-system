@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>403 – Access Denied – PowerGrid</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tabler.min.css') }}">
+    <style>
+        body { background: linear-gradient(135deg, #0f172a, #1e3a5f); min-height:100vh; }
+        .card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.10);
+                border-radius: 1rem; }
+        h1 { color: #f87171; font-size: 4rem; font-weight:800; }
+        h2 { color: #f1f5f9; }
+        p  { color: rgba(255,255,255,0.55); }
+    </style>
+</head>
+<body class="antialiased d-flex align-items-center justify-content-center" style="min-height:100vh;">
+<div class="container" style="max-width:420px;">
+    <div class="card p-5 text-center">
+        <h1>403</h1>
+        <h2 class="fw-bold mb-2">Access Denied</h2>
+        <p class="mb-4">You don't have permission to access this page. Contact your Head if you need access.</p>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+    </div>
+</div>
+</body>
+</html>

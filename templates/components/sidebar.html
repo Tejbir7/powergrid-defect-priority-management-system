@@ -47,11 +47,16 @@
                     </a>
                     <div class="collapse {{ 'show' if active_page in ['defects', 'add_defect', 'history'] else '' }}" id="sidebarMenuDefects">
                         <ul class="nav nav-sm flex-column">
+                            {# Head, Manager, Engineer can add defects; Viewer cannot #}
+                            {% if current_user.role in ['head', 'manager', 'engineer'] %}
                             <li class="nav-item">
                                 <a class="nav-link ps-5 {{ 'active' if active_page == 'add_defect' else '' }}" href="{{ url_for('add_defect') }}">Add Defect</a>
                             </li>
+                            {% endif %}
                             <li class="nav-item">
-                                <a class="nav-link ps-5 {{ 'active' if active_page == 'defects' else '' }}" href="{{ url_for('defects') }}">View Open Defects</a>
+                                <a class="nav-link ps-5 {{ 'active' if active_page == 'defects' else '' }}" href="{{ url_for('defects') }}">
+                                    {% if current_user.role == 'engineer' %}My Defects{% else %}View Open Defects{% endif %}
+                                </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link ps-5 {{ 'active' if active_page == 'history' else '' }}" href="{{ url_for('defect_history') }}">View Resolved Defects</a>
@@ -72,52 +77,26 @@
                         Equipment Defect Summary
                     </a>
                 </li>
-                {# Maintenance is hidden until its scheduling workflow is implemented. #}
-                {# <li class="nav-item">
-                    <a class="nav-link" href="#">
-                        <span class="nav-link-icon d-inline-flex align-items-center me-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M0 0h24v24H0z" fill="none"></path>
-                                <path d="M5 3l14 0"></path>
-                                <path d="M7 6l10 0"></path>
-                                <path d="M4 9l16 0"></path>
-                                <path d="M6 12l12 0"></path>
-                                <path d="M8 15l8 0"></path>
-                                <path d="M10 18l4 0"></path>
-                            </svg>
-                        </span>
-                        Maintenance
-                    </a>
-                </li> #}
+
+                {# Manage Users — Head only #}
+                {% if current_user.role == 'head' %}
                 <li class="nav-item">
-                    <a class="nav-link {{ 'active' if active_page == 'reports' else '' }}" href="{{ url_for('reports') }}">
+                    <a class="nav-link {{ 'active' if active_page == 'admin_users' else '' }}" href="{{ url_for('admin_users') }}">
                         <span class="nav-link-icon d-inline-flex align-items-center me-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M0 0h24v24H0z" fill="none"></path>
-                                <path d="M6 3h12v18H6z"></path>
-                                <path d="M9 7h6"></path>
-                                <path d="M9 11h6"></path>
-                                <path d="M9 15h3"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"></path>
+                                <path d="M16 11l2 2l4-4"></path>
                             </svg>
                         </span>
-                        Reports
+                        Manage Users
                     </a>
                 </li>
+                {% endif %}
+
                 <li class="nav-item">
-                    <a class="nav-link" href="#">
-                        <span class="nav-link-icon d-inline-flex align-items-center me-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M0 0h24v24H0z" fill="none"></path>
-                                <path d="M12 12a4 4 0 1 0 -4 -4"></path>
-                                <path d="M16 21v-2a4 4 0 0 0 -4 -4h-1"></path>
-                                <path d="M6 8v-1"></path>
-                            </svg>
-                        </span>
-                        Users
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">
+                    <a class="nav-link {{ 'active' if active_page == 'settings' else '' }}" href="{{ url_for('settings') }}">
                         <span class="nav-link-icon d-inline-flex align-items-center me-2">
                             <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M0 0h24v24H0z" fill="none"></path>
@@ -128,16 +107,29 @@
                         </span>
                         Settings
                     </a>
-                    <div class="px-3 pt-2">
-                        <button type="button" id="themeToggle" class="btn btn-sm btn-outline-secondary w-100">
-                            Dark Mode
-                        </button>
-                    </div>
                 </li>
             </ul>
 
-            <div class="mt-4 pt-3 border-top">
-                <a class="nav-link text-danger" href="{{ url_for('dashboard') }}">
+            {# ── User info + Logout ── #}
+            <div class="mt-auto pt-3 border-top">
+                <div class="d-flex align-items-center gap-2 px-2 mb-2">
+                    <span class="avatar avatar-sm"
+                          style="background-image:url('https://ui-avatars.com/api/?name={{ current_user.username|urlencode }}&size=32&background=random');"></span>
+                    <div style="min-width:0;">
+                        <div class="fw-medium text-truncate" style="font-size:0.82rem;">{{ current_user.username }}</div>
+                        <div class="text-muted text-truncate" style="font-size:0.72rem;">
+                            <span class="badge badge-sm
+                                {% if current_user.role == 'head' %}bg-purple
+                                {% elif current_user.role == 'manager' %}bg-azure
+                                {% elif current_user.role == 'engineer' %}bg-green
+                                {% else %}bg-secondary{% endif %}">
+                                {{ current_user.role | title }}
+                            </span>
+                            &nbsp;{{ current_user.corporation.name }}
+                        </div>
+                    </div>
+                </div>
+                <a class="nav-link text-danger" href="{{ url_for('logout') }}">
                     <span class="nav-link-icon d-inline-flex align-items-center me-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M0 0h24v24H0z" fill="none"></path>

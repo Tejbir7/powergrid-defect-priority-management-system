@@ -10,54 +10,26 @@
         border-radius: 1rem;
         padding: 1.25rem;
     }
-
     .metric-icon {
-        width: 2.75rem;
-        height: 2.75rem;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 999px;
-        font-weight: 700;
-        color: #fff;
+        width: 2.75rem; height: 2.75rem;
+        display: inline-flex; align-items: center; justify-content: center;
+        border-radius: 999px; font-weight: 700; color: #fff;
     }
-
-    .metric-value {
-        font-size: 1.75rem;
-        line-height: 1;
-        font-weight: 700;
-    }
-
-    .summary-list {
-        display: grid;
-        gap: 0.9rem;
-    }
-
+    .metric-value { font-size: 1.75rem; line-height: 1; font-weight: 700; }
+    .summary-list { display: grid; gap: 0.9rem; }
     .summary-row {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        gap: 0.75rem;
-        align-items: center;
+        display: grid; grid-template-columns: minmax(0, 1fr) auto;
+        gap: 0.75rem; align-items: center;
     }
-
     .summary-bar {
-        height: 0.5rem;
-        border-radius: 999px;
-        background: rgba(98, 105, 118, 0.12);
-        overflow: hidden;
+        height: 0.5rem; border-radius: 999px;
+        background: rgba(98, 105, 118, 0.12); overflow: hidden;
     }
-
     .summary-bar > span {
-        display: block;
-        height: 100%;
-        border-radius: inherit;
+        display: block; height: 100%; border-radius: inherit;
         background: linear-gradient(90deg, #206bc4, #2fb344);
     }
-
-    .table-responsive {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
+    .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 </style>
 {% endblock %}
 
@@ -65,12 +37,20 @@
 <div class="dashboard-hero mb-4">
     <div class="row align-items-center g-3">
         <div class="col-12 col-lg">
-            <div class="page-pretitle">Overview</div>
+            <div class="page-pretitle">{{ current_user.corporation.name }}</div>
             <h2 class="page-title mb-1">Dashboard</h2>
-            <p class="page-subtitle text-muted mb-0">Showing active defects only. Resolved items move to defect history.</p>
+            <p class="page-subtitle text-muted mb-0">
+                {% if current_user.role == 'engineer' %}
+                Showing all defects. Your assigned tasks are highlighted below.
+                {% else %}
+                Showing active defects only. Resolved items move to defect history.
+                {% endif %}
+            </p>
         </div>
         <div class="col-12 col-lg-auto">
+            {% if current_user.role in ['head', 'manager', 'engineer'] %}
             <a href="{{ url_for('add_defect') }}" class="btn btn-primary w-100 w-lg-auto">Add Defect</a>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -90,6 +70,55 @@
     </div>
     {% endfor %}
 </div>
+
+{# ── Engineer: My Assigned Defects panel ── #}
+{% if my_defects is not none %}
+<div class="card mt-4">
+    <div class="card-header">
+        <h3 class="card-title">My Assigned Defects</h3>
+        <div class="card-options">
+            <span class="badge bg-yellow">{{ my_defects|length }} pending</span>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table card-table table-vcenter">
+            <thead>
+                <tr>
+                    <th>ID</th><th>Asset</th><th>Priority</th>
+                    <th>Status</th><th>Due</th><th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in my_defects %}
+                <tr>
+                    <td>DFT-{{ d.id }}</td>
+                    <td>
+                        <div class="fw-medium">{{ d.asset_name }}</div>
+                        <div class="text-muted small">{{ d.location }}</div>
+                    </td>
+                    <td>
+                        <span class="badge {% if d.priority == 'Critical' %}bg-red{% elif d.priority == 'High' %}bg-orange{% elif d.priority == 'Medium' %}bg-yellow{% else %}bg-green{% endif %}">
+                            {{ d.priority }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge {% if d.status == 'In Progress' %}bg-azure{% else %}bg-yellow{% endif %}">
+                            {{ d.status }}
+                        </span>
+                    </td>
+                    <td class="text-muted small">{{ d.expected_resolution.strftime('%Y-%m-%d') if d.expected_resolution else '—' }}</td>
+                    <td><a href="{{ url_for('edit_defect', defect_id=d.id) }}" class="btn btn-sm btn-primary">Update</a></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-3">No defects assigned to you. 🎉</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
 
 <div class="row mt-4">
     <div class="col-12 col-xl-7">

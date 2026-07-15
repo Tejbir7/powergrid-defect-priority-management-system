@@ -168,11 +168,15 @@
                     <td>{{ defect.date_reported.strftime('%Y-%m-%d %H:%M') if defect.date_reported else '-' }}</td>
                     <td>{{ defect.expected_resolution.strftime('%Y-%m-%d %H:%M') if defect.expected_resolution else '-' }}</td>
                     <td>
+                        {% if current_user.role in ['head', 'manager'] %}
                         <form method="POST" action="{{ url_for('delete_defect', defect_id=defect.id) }}" class="d-inline" onsubmit="return confirm('Delete this resolved defect?');">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <input type="hidden" name="return_to" value="history">
                             <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                         </form>
+                        {% else %}
+                        <span class="text-muted small">—</span>
+                        {% endif %}
                     </td>
                 </tr>
                 {% else %}

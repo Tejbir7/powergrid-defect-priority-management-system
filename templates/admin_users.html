@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Users – PowerGrid{% endblock %}
+
+{% block head %}
+<style>
+    .admin-hero {
+        background: linear-gradient(135deg, rgba(16,94,165,0.08), rgba(139,92,246,0.06));
+        border: 1px solid rgba(98,105,118,0.12);
+        border-radius: 1rem;
+        padding: 1.25rem;
+    }
+    .invite-box {
+        background: rgba(32,107,196,0.06);
+        border: 1px solid rgba(32,107,196,0.18);
+        border-radius: 0.75rem;
+        padding: 1rem 1.25rem;
+    }
+    .invite-link {
+        font-family: monospace;
+        font-size: 0.82rem;
+        word-break: break-all;
+        color: #60a5fa;
+    }
+    .role-badge-head     { background: #6366f1; color: #fff; }
+    .role-badge-manager  { background: #0ea5e9; color: #fff; }
+    .role-badge-engineer { background: #10b981; color: #fff; }
+    .role-badge-viewer   { background: #6b7280; color: #fff; }
+    .role-badge { display:inline-block; padding:0.2rem 0.6rem; border-radius:999px;
+                  font-size:0.72rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; }
+    .pending-row { background: rgba(250,204,21,0.04); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-hero mb-4">
+    <div class="row align-items-center g-3">
+        <div class="col">
+            <div class="page-pretitle">Administration</div>
+            <h2 class="page-title mb-1">Manage Users</h2>
+            <p class="page-subtitle text-muted mb-0">{{ corp.name }} workspace &mdash; {{ users|length }} member(s)</p>
+        </div>
+    </div>
+</div>
+
+{# ── Invite Link ── #}
+<div class="card mb-4">
+    <div class="card-header">
+        <h3 class="card-title">Invite Link</h3>
+    </div>
+    <div class="card-body">
+        <div class="invite-box mb-3">
+            <div class="text-muted small mb-1">Share this link with your team members:</div>
+            <div class="invite-link" id="inviteLink">{{ invite_link }}</div>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <button class="btn btn-sm btn-outline-primary" onclick="copyInvite()">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1" viewBox="0 0 24 24"
+                     stroke-width="2" stroke="currentColor" fill="none">
+                    <path d="M8 8m0 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2z"/>
+                    <path d="M16 8v-2a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>
+                </svg>
+                Copy Link
+            </button>
+            <form method="POST" action="{{ url_for('regenerate_invite') }}"
+                  onsubmit="return confirm('Regenerate invite code? The old link will stop working.');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm btn-outline-secondary">Regenerate Code</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ── Users Table ── #}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Team Members</h3>
+    </div>
+    <div class="table-responsive">
+        <table class="table card-table table-vcenter">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Joined</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr class="{{ 'pending-row' if not user.is_approved else '' }}">
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="avatar avatar-xs"
+                                  style="background-image:url('https://ui-avatars.com/api/?name={{ user.username|urlencode }}&size=32&background=random');"></span>
+                            <div>
+                                <div class="fw-medium">{{ user.username }}</div>
+                                {% if user.id == current_user.id %}
+                                <div class="text-muted small">You</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="text-muted">{{ user.email }}</td>
+                    <td>
+                        <span class="role-badge role-badge-{{ user.role }}">{{ user.role }}</span>
+                    </td>
+                    <td>
+                        {% if user.is_approved %}
+                        <span class="badge bg-green">Active</span>
+                        {% else %}
+                        <span class="badge bg-yellow">Pending</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-muted small">{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td>
+                        {% if user.id != current_user.id %}
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            {# Approve button for pending users #}
+                            {% if not user.is_approved %}
+                            <form method="POST" action="{{ url_for('approve_user', user_id=user.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button class="btn btn-sm btn-success">Approve</button>
+                            </form>
+                            {% endif %}
+
+                            {# Role change #}
+                            <form method="POST" action="{{ url_for('change_user_role', user_id=user.id) }}"
+                                  class="d-flex align-items-center gap-1">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <select name="role" class="form-select form-select-sm" style="width:auto;"
+                                        onchange="this.form.submit()">
+                                    {% for r in ['head','manager','engineer','viewer'] %}
+                                    <option value="{{ r }}" {{ 'selected' if user.role == r }}>
+                                        {{ r|title }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </form>
+
+                            {# Remove user #}
+                            <form method="POST" action="{{ url_for('reject_user', user_id=user.id) }}"
+                                  onsubmit="return confirm('Remove {{ user.username }} from the workspace?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button class="btn btn-sm btn-outline-danger">Remove</button>
+                            </form>
+                        </div>
+                        {% else %}
+                        <span class="text-muted small">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">No users yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function copyInvite() {
+    const link = document.getElementById('inviteLink').textContent.trim();
+    navigator.clipboard.writeText(link).then(() => {
+        const btn = document.querySelector('[onclick="copyInvite()"]');
+        const orig = btn.innerHTML;
+        btn.textContent = '✓ Copied!';
+        btn.classList.replace('btn-outline-primary', 'btn-success');
+        setTimeout(() => { btn.innerHTML = orig; btn.classList.replace('btn-success','btn-outline-primary'); }, 2000);
+    });
+}
+</script>
+{% endblock %}

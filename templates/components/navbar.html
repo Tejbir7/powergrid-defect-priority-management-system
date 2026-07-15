@@ -21,37 +21,32 @@
             </form>
 
             <div class="navbar-nav align-items-center">
-                <div class="nav-item dropdown d-none d-md-flex me-3">
-                    <a class="nav-link px-0 text-muted" href="#" data-bs-toggle="dropdown" aria-label="Notifications">
-                        <span class="badge bg-red badge-notification">3</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M0 0h24v24H0z" fill="none"></path>
-                            <path d="M6 17v-5a6 6 0 0 1 12 0v5"></path>
-                            <path d="M10 21h4"></path>
-                        </svg>
-                    </a>
-                    <div class="dropdown-menu dropdown-menu-end dropdown-menu-card">
-                        <div class="card">
-                            <div class="card-body">
-                                <div class="dropdown-item">No new notifications</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <div class="nav-item dropdown">
                     <a class="nav-link d-flex lh-1 text-reset p-0" href="#" data-bs-toggle="dropdown" aria-label="Profile menu">
-                        <span class="avatar avatar-sm" style="background-image: url('https://ui-avatars.com/api/?name=PD');"></span>
+                        <span class="avatar avatar-sm"
+                              style="background-image:url('https://ui-avatars.com/api/?name={{ current_user.username|urlencode }}&size=32&background=random');"></span>
                         <div class="d-none d-xl-block ps-2">
-                            <div>Senior Engineer</div>
-                            <div class="mt-1 small text-muted">powergrid@example.com</div>
+                            <div>{{ current_user.username }}</div>
+                            <div class="mt-1 small text-muted">{{ current_user.email }}</div>
                         </div>
                     </a>
                     <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
-                        <a class="dropdown-item" href="#">Profile</a>
-                        <a class="dropdown-item" href="#">Settings</a>
+                        <div class="dropdown-item text-muted small">
+                            <span class="badge
+                                {% if current_user.role == 'head' %}bg-purple
+                                {% elif current_user.role == 'manager' %}bg-azure
+                                {% elif current_user.role == 'engineer' %}bg-green
+                                {% else %}bg-secondary{% endif %}">
+                                {{ current_user.role | title }}
+                            </span>
+                            &nbsp;{{ current_user.corporation.name }}
+                        </div>
                         <div class="dropdown-divider"></div>
-                        <a class="dropdown-item" href="#">Logout</a>
+                        {% if current_user.role == 'head' %}
+                        <a class="dropdown-item" href="{{ url_for('admin_users') }}">Manage Users</a>
+                        {% endif %}
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item text-danger" href="{{ url_for('logout') }}">Logout</a>
                     </div>
                 </div>
             </div>
@@ -59,7 +54,7 @@
 
         <div class="navbar-nav d-none d-md-flex">
             <div class="nav-item">
-                <span class="navbar-text text-muted">PowerGrid Maintenance Tracking</span>
+                <span class="navbar-text text-muted">{{ current_user.corporation.name }} — PowerGrid</span>
             </div>
         </div>
     </div>
