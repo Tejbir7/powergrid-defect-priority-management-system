@@ -24,6 +24,45 @@
 
             <div class="page-body">
                 <div class="container-xl px-4 py-4">
+                    {# ── Flash Messages ── #}
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% for category, message in messages %}
+                    {% if category == 'reminder' %}
+                    <div class="alert mb-3 d-flex align-items-center gap-2"
+                         style="background:rgba(250,204,21,0.08);border:1px solid rgba(250,204,21,0.3);border-radius:0.6rem;color:#fde68a;">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon flex-shrink-0" viewBox="0 0 24 24"
+                             stroke-width="2" stroke="#facc15" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 17v-5a6 6 0 0 1 12 0v5"/><path d="M10 21h4"/>
+                            <circle cx="12" cy="4" r="1"/>
+                        </svg>
+                        <span>{{ message }}
+                            <a href="{{ url_for('defects') }}" style="color:#facc15;text-decoration:underline;">View defects →</a>
+                        </span>
+                    </div>
+                    {% elif category == 'success' %}
+                    <div class="alert alert-success alert-dismissible mb-3" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% elif category == 'danger' %}
+                    <div class="alert alert-danger alert-dismissible mb-3" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% elif category == 'warning' %}
+                    <div class="alert alert-warning alert-dismissible mb-3" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info alert-dismissible mb-3" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                    {% endwith %}
+
                     {% block content %}{% endblock %}
                 </div>
             </div>

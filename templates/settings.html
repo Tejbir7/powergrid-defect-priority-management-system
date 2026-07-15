@@ -1,0 +1,347 @@
+{% extends "base.html" %}
+
+{% block title %}Settings – PowerGrid{% endblock %}
+
+{% block head %}
+<style>
+    .settings-hero {
+        background: linear-gradient(135deg, rgba(16,94,165,0.08), rgba(139,92,246,0.06));
+        border: 1px solid rgba(98,105,118,0.12);
+        border-radius: 1rem;
+        padding: 1.25rem;
+    }
+    .settings-section {
+        border-radius: 0.75rem;
+        overflow: hidden;
+    }
+    .toggle-switch {
+        position: relative; display: inline-flex;
+        align-items: center; cursor: pointer; gap: 0.6rem;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .slider {
+        width: 2.75rem; height: 1.5rem;
+        background: rgba(98,105,118,0.3);
+        border-radius: 999px; transition: background 0.2s;
+        position: relative; flex-shrink: 0;
+    }
+    .slider::after {
+        content: ''; position: absolute;
+        top: 0.2rem; left: 0.2rem;
+        width: 1.1rem; height: 1.1rem;
+        border-radius: 50%; background: #fff;
+        transition: transform 0.2s;
+    }
+    .toggle-switch input:checked + .slider { background: #2fb344; }
+    .toggle-switch input:checked + .slider::after { transform: translateX(1.25rem); }
+
+    .freq-tab {
+        padding: 0.45rem 1rem; border-radius: 0.5rem;
+        border: 1px solid rgba(98,105,118,0.25);
+        cursor: pointer; font-size: 0.85rem; font-weight: 500;
+        transition: all 0.15s; color: var(--tblr-muted);
+        background: transparent;
+    }
+    .freq-tab:hover { border-color: #206bc4; color: #206bc4; }
+    .freq-tab.active {
+        background: #206bc4; border-color: #206bc4;
+        color: #fff;
+    }
+    .dynamic-section { display: none; }
+    .dynamic-section.visible { display: flex; }
+
+    .status-dot {
+        width: 0.55rem; height: 0.55rem; border-radius: 50%;
+        display: inline-block; margin-right: 0.35rem;
+    }
+    .status-dot.on  { background: #2fb344; box-shadow: 0 0 0 3px rgba(47,179,68,0.2); }
+    .status-dot.off { background: #868c99; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="settings-hero mb-4">
+    <div class="row align-items-center g-2">
+        <div class="col">
+            <div class="page-pretitle">Configuration</div>
+            <h2 class="page-title mb-0">Settings</h2>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+
+    {# ══ Column 0: Appearance (All users) ══════════════════════════════════════ #}
+    <div class="col-12 col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title mb-0">🎨 Appearance</h3>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-4" style="font-size:0.88rem;">
+                    Customize the look and feel of your workspace.
+                </p>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="fw-medium">Theme</div>
+                        <div class="text-muted small">Toggle dark or light interface</div>
+                    </div>
+                    <button type="button" id="themeToggle" class="btn btn-outline-secondary">
+                        Dark Mode
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if current_user.role != 'viewer' %}
+    {# ══ Column 1: Reminder Preferences (all non-viewer users) ══════════════════ #}
+    <div class="col-12 col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <div class="d-flex align-items-center justify-content-between w-100">
+                    <h3 class="card-title mb-0">📬 Email Reminder</h3>
+                    <div>
+                        {% if current_user.reminder_enabled %}
+                        <span class="badge bg-green">
+                            <span class="status-dot on"></span>Active
+                        </span>
+                        {% else %}
+                        <span class="badge bg-secondary">
+                            <span class="status-dot off"></span>Inactive
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-4" style="font-size:0.88rem;">
+                    Set when you want to receive an email listing your pending defects.
+                    {% if not smtp_configured %}
+                    <br><span class="text-warning">⚠ SMTP is not configured — no emails will be sent until the Head sets up the mail server.</span>
+                    {% endif %}
+                </p>
+
+                <form method="POST" action="{{ url_for('settings') }}" id="reminderForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="action" value="reminder">
+
+                    {# Enable toggle #}
+                    <div class="mb-4">
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="reminder_enabled" id="reminderEnabled"
+                                   {% if current_user.reminder_enabled %}checked{% endif %}
+                                   onchange="onToggleChange(this)">
+                            <span class="slider"></span>
+                            <span class="fw-medium" id="toggleLabel">
+                                {% if current_user.reminder_enabled %}Reminders on{% else %}Reminders off{% endif %}
+                            </span>
+                        </label>
+                    </div>
+
+                    <div id="reminderConfig" {% if not current_user.reminder_enabled %}style="opacity:0.4;pointer-events:none;"{% endif %}>
+
+                        {# Frequency tabs #}
+                        <div class="mb-3">
+                            <label class="form-label">Frequency</label>
+                            <div class="d-flex gap-2 flex-wrap" role="group">
+                                {% for f in ['daily','weekly','monthly'] %}
+                                <button type="button"
+                                        class="freq-tab {{ 'active' if current_user.reminder_frequency == f else '' }}"
+                                        data-freq="{{ f }}"
+                                        onclick="selectFreq('{{ f }}')">
+                                    {{ f|title }}
+                                </button>
+                                {% endfor %}
+                            </div>
+                            <input type="hidden" name="frequency" id="frequencyInput"
+                                   value="{{ current_user.reminder_frequency or 'daily' }}">
+                        </div>
+
+                        {# Weekly: day of week #}
+                        <div class="dynamic-section flex-column mb-3 {{ 'visible' if current_user.reminder_frequency == 'weekly' }}"
+                             id="weeklySection">
+                            <label class="form-label">Day of the week</label>
+                            <select name="day_of_week" class="form-select">
+                                {% for i, day in enumerate(days_of_week) %}
+                                <option value="{{ i }}"
+                                    {{ 'selected' if current_user.reminder_day_of_week == i }}>
+                                    {{ day }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        {# Monthly: day of month #}
+                        <div class="dynamic-section flex-column mb-3 {{ 'visible' if current_user.reminder_frequency == 'monthly' }}"
+                             id="monthlySection">
+                            <label class="form-label">Day of the month</label>
+                            <select name="day_of_month" class="form-select">
+                                {% for d in days_of_month %}
+                                <option value="{{ d }}"
+                                    {{ 'selected' if current_user.reminder_day_of_month == d }}>
+                                    {{ d }}{% if d == 1 %}st{% elif d == 2 %}nd{% elif d == 3 %}rd{% else %}th{% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        {# Time #}
+                        <div class="mb-4">
+                            <label class="form-label">Time</label>
+                            <input type="time" name="reminder_time" class="form-control"
+                                   value="{{ '%02d:%02d' % (current_user.reminder_hour or 9, current_user.reminder_minute or 0) }}"
+                                   style="max-width:160px;">
+                            <div class="text-muted mt-1" style="font-size:0.78rem;">
+                                Your local server time. Currently {{ now.strftime('%H:%M') }}.
+                            </div>
+                        </div>
+
+                    </div>{# end reminderConfig #}
+
+                    <button type="submit" class="btn btn-primary">Save Reminder Settings</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {# ══ Column 2: SMTP Configuration (Head only) ═══════════════════════════════ #}
+    <div class="col-12 col-lg-6">
+        {% if current_user.role == 'head' %}
+        <div class="card h-100">
+            <div class="card-header">
+                <div class="d-flex align-items-center justify-content-between w-100">
+                    <h3 class="card-title mb-0">⚙️ Mail Server (SMTP)</h3>
+                    {% if smtp_configured %}
+                    <span class="badge bg-green"><span class="status-dot on"></span>Configured</span>
+                    {% else %}
+                    <span class="badge bg-secondary"><span class="status-dot off"></span>Not set</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-4" style="font-size:0.88rem;">
+                    These settings apply to the entire workspace and are required for email reminders to send.
+                    Stored securely in the database — no file editing needed.
+                </p>
+
+                {% if not smtp_configured %}
+                <div class="alert alert-warning mb-4">
+                    <strong>Gmail quick setup:</strong> Use <code>smtp.gmail.com</code>, port <code>587</code>.
+                    Create an <strong>App Password</strong> in your Google Account &rarr; Security &rarr; 2-Step Verification &rarr; App passwords.
+                </div>
+                {% endif %}
+
+                <form method="POST" action="{{ url_for('settings') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="action" value="smtp">
+
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label">SMTP Server</label>
+                            <input type="text" name="mail_server" class="form-control"
+                                   value="{{ smtp_settings.server }}" placeholder="smtp.gmail.com">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Port</label>
+                            <input type="number" name="mail_port" class="form-control"
+                                   value="{{ smtp_settings.port }}" placeholder="587">
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="mail_use_tls"
+                                       id="useTLS" {{ 'checked' if smtp_settings.use_tls }}>
+                                <label class="form-check-label" for="useTLS">Use TLS</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Email Address (sender)</label>
+                            <input type="email" name="mail_username" class="form-control"
+                                   value="{{ smtp_settings.username }}"
+                                   placeholder="yourapp@gmail.com">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">
+                                Password / App Password
+                                {% if smtp_configured %}
+                                <span class="text-muted">(leave blank to keep current)</span>
+                                {% endif %}
+                            </label>
+                            <input type="password" name="mail_password" class="form-control"
+                                   placeholder="{{ '••••••••••••' if smtp_configured else 'Enter app password' }}"
+                                   autocomplete="new-password">
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">Save SMTP Settings</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% else %}
+        {# Non-head users see info about SMTP status #}
+        <div class="card h-100">
+            <div class="card-header">
+                <h3 class="card-title mb-0">⚙️ Mail Server Status</h3>
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center flex-column text-center" style="min-height:200px;">
+                {% if smtp_configured %}
+                <div class="mb-3">
+                    <span class="avatar avatar-lg bg-green-lt">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg text-green" viewBox="0 0 24 24"
+                             stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 12l5 5l10-10"/>
+                        </svg>
+                    </span>
+                </div>
+                <h4 class="text-green mb-1">Mail server is configured</h4>
+                <p class="text-muted">Email reminders are available. Enable yours on the left.</p>
+                {% else %}
+                <div class="mb-3">
+                    <span class="avatar avatar-lg bg-yellow-lt">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-lg text-yellow" viewBox="0 0 24 24"
+                             stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 9v4"/><path d="M12 17h.01"/>
+                            <path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0-18 0"/>
+                        </svg>
+                    </span>
+                </div>
+                <h4 class="text-yellow mb-1">Mail server not configured</h4>
+                <p class="text-muted">Contact your Head to enable email reminders for the workspace.</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function selectFreq(freq) {
+    document.getElementById('frequencyInput').value = freq;
+    document.querySelectorAll('.freq-tab').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.freq === freq);
+    });
+    document.getElementById('weeklySection').classList.toggle('visible',  freq === 'weekly');
+    document.getElementById('monthlySection').classList.toggle('visible', freq === 'monthly');
+}
+
+function onToggleChange(cb) {
+    const config = document.getElementById('reminderConfig');
+    const label  = document.getElementById('toggleLabel');
+    if (cb.checked) {
+        config.style.opacity = '1';
+        config.style.pointerEvents = 'auto';
+        label.textContent = 'Reminders on';
+    } else {
+        config.style.opacity = '0.4';
+        config.style.pointerEvents = 'none';
+        label.textContent = 'Reminders off';
+    }
+}
+</script>
+{% endblock %}

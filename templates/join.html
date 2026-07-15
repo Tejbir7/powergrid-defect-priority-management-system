@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join {{ corp.name }} – PowerGrid</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tabler.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tabler-themes.min.css') }}">
+    <style>
+        body { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); min-height: 100vh; }
+        .auth-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.10);
+            border-radius: 1rem;
+            backdrop-filter: blur(12px);
+        }
+        .brand-icon {
+            width: 3.5rem; height: 3.5rem;
+            background: linear-gradient(135deg, #206bc4, #2fb344);
+            border-radius: 0.75rem;
+            display: inline-flex; align-items: center; justify-content: center;
+        }
+        .corp-badge {
+            display: inline-block; background: rgba(32,107,196,0.2);
+            border: 1px solid rgba(32,107,196,0.4); color: #60a5fa;
+            border-radius: 999px; padding: 0.2rem 0.75rem; font-size: 0.82rem; font-weight: 600;
+        }
+        .form-control {
+            background: rgba(255,255,255,0.06) !important;
+            border: 1px solid rgba(255,255,255,0.15) !important;
+            color: #e2e8f0 !important;
+        }
+        .form-control::placeholder { color: rgba(255,255,255,0.35) !important; }
+        .form-control:focus { box-shadow: 0 0 0 3px rgba(32,107,196,0.3) !important; }
+        .form-label { color: rgba(255,255,255,0.65); font-size: 0.82rem; }
+        .btn-primary { background: linear-gradient(135deg,#206bc4,#1a56a8); border: none; }
+        h2 { color: #f1f5f9; }
+        .text-muted { color: rgba(255,255,255,0.45) !important; }
+    </style>
+</head>
+<body class="antialiased d-flex align-items-center justify-content-center py-5" style="min-height:100vh;">
+<div class="container" style="max-width:440px;">
+
+    <div class="text-center mb-4">
+        <div class="brand-icon mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
+                 stroke-width="2" stroke="#fff" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h6v8H4z"/><path d="M4 16h6v4H4z"/>
+                <path d="M14 4h6v4h-6z"/><path d="M14 12h6v8h-6z"/>
+            </svg>
+        </div>
+        <h2 class="fw-bold mb-1">Join Workspace</h2>
+        <p class="text-muted mb-2">You've been invited to</p>
+        <span class="corp-badge">{{ corp.name }}</span>
+    </div>
+
+    <div class="auth-card p-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ 'danger' if category == 'danger' else 'info' }} mb-3">{{ message }}</div>
+        {% endfor %}
+        {% endwith %}
+
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="mb-3">
+                <label class="form-label">Full Name / Username</label>
+                <input id="username" type="text" name="username" class="form-control"
+                       placeholder="Your name" required autofocus>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Email address</label>
+                <input id="email" type="email" name="email" class="form-control"
+                       placeholder="you@company.com" required>
+            </div>
+            <div class="row g-2 mb-4">
+                <div class="col-6">
+                    <label class="form-label">Password</label>
+                    <input id="password" type="password" name="password" class="form-control"
+                           placeholder="Min 6 chars" required>
+                </div>
+                <div class="col-6">
+                    <label class="form-label">Confirm</label>
+                    <input id="confirm_password" type="password" name="confirm_password" class="form-control"
+                           placeholder="Repeat" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 fw-semibold">Request Access</button>
+        </form>
+    </div>
+
+    <p class="text-center mt-3 text-muted" style="font-size:0.82rem;">
+        After registration, the Head must approve your account before you can log in.
+    </p>
+</div>
+<script src="{{ url_for('static', filename='js/tabler.min.js') }}"></script>
+</body>
+</html>
