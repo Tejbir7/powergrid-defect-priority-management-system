@@ -101,6 +101,7 @@
                 <table class="table table-vcenter card-table">
                     <thead>
                         <tr>
+                            <th>S. No.</th>
                             <th>ID</th>
                             <th>Asset</th>
                             <th>Priority</th>
@@ -111,6 +112,7 @@
                     <tbody>
                         {% for defect in recent_defects %}
                         <tr>
+                            <td>{{ loop.index }}</td>
                             <td>DFT-{{ defect.id }}</td>
                             <td>
                                 <div class="fw-medium">{{ defect.asset_name }}</div>
@@ -130,7 +132,7 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="5" class="text-center text-muted py-4">No defects have been created yet.</td>
+                            <td colspan="6" class="text-center text-muted py-4">No defects have been created yet.</td>
                         </tr>
                         {% endfor %}
                     </tbody>

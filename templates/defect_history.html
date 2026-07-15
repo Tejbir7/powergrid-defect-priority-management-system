@@ -52,6 +52,7 @@
 <div class="card mb-4">
     <div class="card-body">
         <form method="get" class="row g-3 align-items-end">
+            <input type="hidden" name="q" value="{{ search_query }}">
             <div class="col-12 col-md-3">
                 <label class="form-label">Time Range</label>
                 <select name="range" class="form-select">
@@ -84,6 +85,7 @@
             <input type="hidden" name="range" value="{{ selected_range }}">
             <input type="hidden" name="start" value="{{ filter_start }}">
             <input type="hidden" name="end" value="{{ filter_end }}">
+            <input type="hidden" name="q" value="{{ search_query }}">
             <div class="col-12 col-md-8">
                 <label class="form-label">Select Resolved Defect</label>
                 <select name="defect_id" class="form-select" onchange="this.form.submit()">
@@ -136,6 +138,7 @@
         <table class="table card-table table-vcenter text-nowrap">
             <thead>
                 <tr>
+                    <th>S. No.</th>
                     <th>ID</th>
                     <th>Asset Name</th>
                     <th>Location</th>
@@ -143,11 +146,13 @@
                     <th>Assigned Engineer</th>
                     <th>Date Reported</th>
                     <th>Expected Resolution</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for defect in defects %}
                 <tr>
+                    <td>{{ loop.index }}</td>
                     <td>DFT-{{ defect.id }}</td>
                     <td>
                         <div class="fw-medium">{{ defect.asset_name }}</div>
@@ -162,10 +167,17 @@
                     <td>{{ defect.assigned_engineer or 'Unassigned' }}</td>
                     <td>{{ defect.date_reported.strftime('%Y-%m-%d %H:%M') if defect.date_reported else '-' }}</td>
                     <td>{{ defect.expected_resolution.strftime('%Y-%m-%d %H:%M') if defect.expected_resolution else '-' }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('delete_defect', defect_id=defect.id) }}" class="d-inline" onsubmit="return confirm('Delete this resolved defect?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="return_to" value="history">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                        </form>
+                    </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="7" class="text-center text-muted py-4">No resolved defects match the selected time range.</td>
+                    <td colspan="9" class="text-center text-muted py-4">No resolved defects match the selected filters.</td>
                 </tr>
                 {% endfor %}
             </tbody>
