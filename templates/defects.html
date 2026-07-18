@@ -3,7 +3,7 @@
 {% block title %}Defects - PowerGrid{% endblock %}
 
 {% block content %}
-<div class="page-header d-print-none">
+<div class="page-header mb-4 d-print-none">
     <div class="row align-items-center">
         <div class="col">
             <div class="page-pretitle">Defect Management</div>
@@ -126,7 +126,7 @@
                         </span>
                     </td>
                     <td>{{ defect.assigned_engineer or 'Unassigned' }}</td>
-                            <td>{{ defect.date_reported.strftime('%Y-%m-%d %H:%M') if defect.date_reported else '-' }}</td>
+                    <td>{{ defect.date_reported.strftime('%Y-%m-%d %H:%M') if defect.date_reported else '-' }}</td>
                     <td>{{ defect.expected_resolution.strftime('%Y-%m-%d %H:%M') if defect.expected_resolution else '-' }}</td>
                     <td>
                         {% if current_user.role != 'viewer' %}

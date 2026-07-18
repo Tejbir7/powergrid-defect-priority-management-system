@@ -142,7 +142,8 @@ class Defect(db.Model):
 
     status_logs = db.relationship(
         "DefectStatusLog", backref="defect", lazy=True,
-        order_by="DefectStatusLog.changed_at.desc()"
+        order_by="DefectStatusLog.changed_at.desc()",
+        cascade="all, delete-orphan"
     )
 
 

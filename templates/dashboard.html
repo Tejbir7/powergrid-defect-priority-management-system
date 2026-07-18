@@ -42,8 +42,6 @@
             <p class="page-subtitle text-muted mb-0">
                 {% if current_user.role == 'engineer' %}
                 Showing all defects. Your assigned tasks are highlighted below.
-                {% else %}
-                Showing active defects only. Resolved items move to defect history.
                 {% endif %}
             </p>
         </div>
@@ -218,9 +216,6 @@
                             {% endfor %}
                         </div>
                     </div>
-                </div>
-                <div class="alert alert-info mb-0">
-                    Active defects are shown here. Resolved defects are archived in defect history.
                 </div>
             </div>
         </div>

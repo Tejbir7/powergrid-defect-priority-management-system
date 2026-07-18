@@ -69,33 +69,30 @@
     </div>
 </div>
 
-<div class="row g-4">
-
-    {# ══ Column 0: Appearance (All users) ══════════════════════════════════════ #}
-    <div class="col-12 col-lg-6">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title mb-0">🎨 Appearance</h3>
+{# ══ Appearance: full-width compact card ══════════════════════════════════════ #}
+<div class="card mb-4">
+    <div class="card-body py-3">
+        <div class="row align-items-center">
+            <div class="col-auto">
+                <span class="avatar avatar-sm bg-primary-lt">🎨</span>
             </div>
-            <div class="card-body">
-                <p class="text-muted mb-4" style="font-size:0.88rem;">
-                    Customize the look and feel of your workspace.
-                </p>
-                <div class="d-flex align-items-center justify-content-between">
-                    <div>
-                        <div class="fw-medium">Theme</div>
-                        <div class="text-muted small">Toggle dark or light interface</div>
-                    </div>
-                    <button type="button" id="themeToggle" class="btn btn-outline-secondary">
-                        Dark Mode
-                    </button>
-                </div>
+            <div class="col">
+                <div class="fw-medium">Theme</div>
+                <div class="text-muted small">Toggle dark or light interface</div>
+            </div>
+            <div class="col-auto">
+                <button type="button" id="themeToggle" class="btn btn-outline-secondary btn-sm">
+                    Dark Mode
+                </button>
             </div>
         </div>
     </div>
+</div>
 
-    {% if current_user.role != 'viewer' %}
-    {# ══ Column 1: Reminder Preferences (all non-viewer users) ══════════════════ #}
+{% if current_user.role != 'viewer' %}
+<div class="row g-4">
+
+    {# ══ Email Reminder ══════════════════════════════════════════════════════════ #}
     <div class="col-12 col-lg-6">
         <div class="card h-100">
             <div class="card-header">
@@ -205,7 +202,7 @@
         </div>
     </div>
 
-    {# ══ Column 2: SMTP Configuration (Head only) ═══════════════════════════════ #}
+    {# ══ SMTP Configuration (Head) / SMTP Status (others) ═════════════════════ #}
     <div class="col-12 col-lg-6">
         {% if current_user.role == 'head' %}
         <div class="card h-100">
@@ -296,7 +293,7 @@
                     </span>
                 </div>
                 <h4 class="text-green mb-1">Mail server is configured</h4>
-                <p class="text-muted">Email reminders are available. Enable yours on the left.</p>
+                <p class="text-muted">Email reminders are available. Enable yours above.</p>
                 {% else %}
                 <div class="mb-3">
                     <span class="avatar avatar-lg bg-yellow-lt">
@@ -314,9 +311,9 @@
         </div>
         {% endif %}
     </div>
-    {% endif %}
 
 </div>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}

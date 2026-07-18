@@ -6,11 +6,118 @@
     <meta name="description" content="PowerGrid Maintenance Defect Tracking & Priority Management System">
     <title>{% block title %}PowerGrid Maintenance Defect Tracking & Priority Management System{% endblock %}</title>
 
+    {# ── Anti-flash: apply saved theme BEFORE any CSS renders ── #}
+    <script>
+        (function(){
+            var t = localStorage.getItem('powergrid-theme');
+            if (t === 'dark') document.documentElement.setAttribute('data-bs-theme','dark');
+        })();
+    </script>
+    <style>
+        /* Prevent white flash: set background before Tabler CSS loads */
+        html[data-bs-theme="dark"], html[data-bs-theme="dark"] body {
+            background-color: #1a1e2e;
+            color-scheme: dark;
+        }
+        html:not([data-bs-theme="dark"]), html:not([data-bs-theme="dark"]) body {
+            background-color: #f1f5f9;
+            color-scheme: light;
+        }
+    </style>
+
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tabler.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tabler-flags.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tabler-payments.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tabler-socials.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tabler-themes.min.css') }}">
+
+    {# ── Badge contrast: dark text on light-colored badges ── #}
+    <style>
+        .badge.bg-yellow,
+        .badge.bg-lime,
+        .badge.bg-cyan,
+        .badge.bg-orange,
+        .badge.bg-green { color: #1a1a2e !important; }
+        .badge.bg-red,
+        .badge.bg-blue,
+        .badge.bg-azure,
+        .badge.bg-purple,
+        .badge.bg-secondary { color: #ffffff !important; }
+        .badge[class*="-lt"] { color: #1a1a2e !important; }
+
+        /* Consistent alert border-radius across all types */
+        .alert { border-radius: 0.5rem; }
+
+        /* ── Sidebar modernization ── */
+        .navbar-vertical .navbar-nav .nav-link {
+            padding: 0.5rem 0.75rem;
+            margin: 0.1rem 0.5rem;
+            border-radius: 0.45rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+        .navbar-vertical .navbar-nav .nav-link:hover {
+            background: rgba(32, 107, 196, 0.08);
+        }
+        .navbar-vertical .navbar-nav .nav-link.active {
+            background: rgba(32, 107, 196, 0.12);
+            color: #206bc4;
+            font-weight: 600;
+        }
+        [data-bs-theme="dark"] .navbar-vertical .navbar-nav .nav-link:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+        [data-bs-theme="dark"] .navbar-vertical .navbar-nav .nav-link.active {
+            background: rgba(32, 107, 196, 0.18);
+            color: #6ea8e6;
+        }
+        .navbar-vertical .navbar-nav .nav-link-icon {
+            width: 1.5rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            opacity: 0.7;
+        }
+        .navbar-vertical .navbar-nav .nav-link.active .nav-link-icon {
+            opacity: 1;
+        }
+        /* Sub-nav items: left accent line */
+        .navbar-vertical .nav-sm .nav-link {
+            padding: 0.35rem 0.75rem 0.35rem 2.5rem;
+            margin: 0.05rem 0.5rem;
+            font-size: 0.82rem;
+            font-weight: 450;
+            border-left: 2px solid transparent;
+            border-radius: 0;
+        }
+        .navbar-vertical .nav-sm .nav-link:hover {
+            border-left-color: rgba(32, 107, 196, 0.3);
+            background: transparent;
+        }
+        .navbar-vertical .nav-sm .nav-link.active {
+            border-left-color: #206bc4;
+            background: transparent;
+            color: #206bc4;
+        }
+        [data-bs-theme="dark"] .navbar-vertical .nav-sm .nav-link.active {
+            border-left-color: #6ea8e6;
+            color: #6ea8e6;
+        }
+        /* Sidebar user section polish */
+        .navbar-vertical .mt-auto {
+            padding: 0.5rem;
+        }
+        /* Sidebar brand spacing */
+        .navbar-vertical .navbar-brand {
+            padding: 0.75rem 0.5rem;
+        }
+        .navbar-vertical .navbar-brand .navbar-brand-title {
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+    </style>
 
     {% block head %}{% endblock %}
 </head>
@@ -28,15 +135,14 @@
                     {% with messages = get_flashed_messages(with_categories=true) %}
                     {% for category, message in messages %}
                     {% if category == 'reminder' %}
-                    <div class="alert mb-3 d-flex align-items-center gap-2"
-                         style="background:rgba(250,204,21,0.08);border:1px solid rgba(250,204,21,0.3);border-radius:0.6rem;color:#fde68a;">
+                    <div class="alert alert-warning mb-3 d-flex align-items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon flex-shrink-0" viewBox="0 0 24 24"
-                             stroke-width="2" stroke="#facc15" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                             stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M6 17v-5a6 6 0 0 1 12 0v5"/><path d="M10 21h4"/>
                             <circle cx="12" cy="4" r="1"/>
                         </svg>
                         <span>{{ message }}
-                            <a href="{{ url_for('defects') }}" style="color:#facc15;text-decoration:underline;">View defects →</a>
+                            <a href="{{ url_for('defects') }}" class="alert-link ms-1 text-decoration-underline">View defects →</a>
                         </span>
                     </div>
                     {% elif category == 'success' %}
@@ -97,6 +203,7 @@
                 }
             }
 
+            /* Theme already applied by head script; sync toggle button text */
             const savedTheme = localStorage.getItem(storageKey) || 'light';
             applyTheme(savedTheme);
 
