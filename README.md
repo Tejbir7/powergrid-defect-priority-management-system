@@ -1,4 +1,4 @@
-﻿# ⚡ PowerGrid — Defect Priority Management System
+﻿#  PowerGrid — Defect Priority Management System
 
 ![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-2.x-000000?style=for-the-badge&logo=flask&logoColor=white)
@@ -216,7 +216,7 @@ Visit `http://127.0.0.1:5000` — the first user to register becomes the **Head*
 
 ---
 
-## 🔐 Environment Variables
+##  Environment Variables
 
 | Variable | Required | Description |
 |---|---|---|
@@ -260,7 +260,7 @@ assets
 
 ---
 
-## 👨 Author
+##  Author
 
 **Tejbir Singh**
 
