@@ -8,6 +8,9 @@
 
 A full-stack web application for managing, tracking, and prioritising infrastructure defects in power grid operations. Built with a role-based access model to support multi-user teams — from field engineers reporting faults to heads overseeing resolution across the organisation.
 
+Why need this?
+Maintenance defects were traditionally recorded in notebooks or spreadsheets, making it difficult to prioritize issues, assign responsibilities, and track resolution. This system digitizes the entire workflow by centralizing defect management with role-based access, dashboards, and automated email reminders.
+
 ---
 
 ## Screenshots
