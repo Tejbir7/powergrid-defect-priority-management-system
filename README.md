@@ -12,9 +12,18 @@ A full-stack web application for managing, tracking, and prioritising infrastruc
 
 ## Screenshots
 
-> _Add screenshots of your Dashboard, Defects list, and Settings pages here._
->
-> **Tip:** Take screenshots and drag them into this section on GitHub to embed them automatically.
+-Dashboard
+<img width="2880" height="1551" alt="2026-07-19 15_51_15-" src="https://github.com/user-attachments/assets/876d14fe-ec50-470a-a33c-1c36fb3b05be" />
+-Add Defects
+<img width="2880" height="1564" alt="2026-07-19 15_52_47-" src="https://github.com/user-attachments/assets/71c8baa8-61cb-44fa-9ef6-f90254056f48" />
+-Open Defects
+<img width="2880" height="1560" alt="2026-07-19 15_52_11-" src="https://github.com/user-attachments/assets/f441360d-91e6-4e5f-952b-5240b4214d71" />
+-Manage Users
+<img width="2880" height="1562" alt="2026-07-19 15_51_51-" src="https://github.com/user-attachments/assets/e69e09ee-4ba5-41d8-9ab3-c26eb5ddb9f5" />
+-Defect history, demonstrated in light mode
+<img width="2880" height="1558" alt="2026-07-19 15_53_03-" src="https://github.com/user-attachments/assets/6b1c0d68-d924-4c63-afb8-3970a0e3ed84" />
+-Email Reminder Feature
+<img width="2243" height="977" alt="2026-07-19 15_53_29-Settings" src="https://github.com/user-attachments/assets/5d28a8f9-e9a3-43df-8816-960bbd2af910" />
 
 ---
 
