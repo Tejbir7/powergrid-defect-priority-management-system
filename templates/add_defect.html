@@ -5,16 +5,21 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-header d-print-none">
+<div class="page-header d-print-none mb-3">
     <div class="row align-items-center">
         <div class="col">
-            <div class="page-pretitle">Defect Management</div>
+            <div class="page-pretitle text-primary fw-bold">Grid Fault Reporting</div>
             <h2 class="page-title">
-                {% if defect %}Edit Defect DFT-{{ defect.id }}{% else %}Add Defect{% endif %}
+                {% if defect %}Edit Defect DFT-{{ defect.id }}{% else %}Report New Defect{% endif %}
             </h2>
             {% if engineer_restricted %}
-            <p class="text-muted mb-0">As an Engineer you can update status and add a comment on your assigned defects.</p>
+            <p class="text-muted mb-0">As an assigned Engineer, you can update status and record diagnostic comments.</p>
             {% endif %}
+        </div>
+        <div class="col-auto">
+            <a href="{{ url_for('defects') }}" class="btn btn-outline-secondary">
+                &larr; Back to Defects
+            </a>
         </div>
     </div>
 </div>
@@ -22,7 +27,7 @@
 <div class="row g-4">
     {# ── Main Form ── #}
     <div class="col-12 {{ 'col-lg-7' if defect else 'col-12' }}">
-        <div class="card">
+        <div class="card shadow-sm">
             <div class="card-body">
                 <form method="POST">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -30,39 +35,58 @@
 
                         {# Asset Selection #}
                         <div class="col-md-6">
-                            <label class="form-label">Equipment / Asset</label>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label mb-0 required">Equipment / Asset</label>
+                                {% if not engineer_restricted %}
+                                <button type="button" class="btn btn-sm btn-link text-primary p-0 text-decoration-none fw-semibold"
+                                        data-bs-toggle="modal" data-bs-target="#quickAddAssetModal">
+                                    + Add New Equipment
+                                </button>
+                                {% endif %}
+                            </div>
+
                             {% if engineer_restricted %}
                             <input type="text" class="form-control" value="{{ defect.asset.asset_name if defect and defect.asset else '' }}" readonly>
                             <input type="hidden" name="asset_id" value="{{ defect.asset_id if defect else '' }}">
                             {% else %}
                             <select name="asset_id" id="assetSelect" class="form-select" required onchange="onAssetChange()">
-                                <option value="">— Select Equipment —</option>
+                                <option value="">— Select Equipment / Component —</option>
                                 {% for a in assets %}
-                                <option value="{{ a.id }}" data-location="{{ a.location.name if a.location else 'Site' }}"
-                                    {% if defect and defect.asset_id == a.id %}selected{% endif %}>
-                                    {{ a.asset_name }} ({{ a.asset_type.name }})
+                                <option value="{{ a.id }}" data-location="{{ a.location.full_path if a.location else 'Site' }}"
+                                    {% if (defect and defect.asset_id == a.id) or (selected_asset_id and selected_asset_id == a.id) %}selected{% endif %}>
+                                    {% if a.is_component %}
+                                    ↳ {{ a.asset_name }} ({{ a.asset_type.name }} &bull; Component of {{ a.parent.asset_name }})
+                                    {% else %}
+                                    ⚡ {{ a.asset_name }} ({{ a.asset_type.name }})
+                                    {% endif %}
                                 </option>
                                 {% endfor %}
                             </select>
+                            {% if not assets %}
+                            <div class="text-danger small mt-1">
+                                No equipment registered in this sector yet. Click <strong>"+ Add New Equipment"</strong> above to add one.
+                            </div>
+                            {% endif %}
                             {% endif %}
                         </div>
 
-                        {# Location (Derived automatically from Asset in 3NF) #}
+                        {# Location (Derived automatically from Asset) #}
                         <div class="col-md-6">
-                            <label class="form-label">Location <span class="text-muted">(derived from asset)</span></label>
-                            <input type="text" id="assetLocation" class="form-control bg-light"
-                                   value="{{ defect.asset.location.name if defect and defect.asset and defect.asset.location else '' }}"
-                                   placeholder="Select an asset to view location" readonly>
+                            <label class="form-label">Physical Location <span class="text-muted">(auto-detected from equipment)</span></label>
+                            <input type="text" id="assetLocation" class="form-control bg-light fw-medium"
+                                   value="{{ defect.asset.location.full_path if defect and defect.asset and defect.asset.location else '' }}"
+                                   placeholder="Select an asset to view location hierarchy" readonly>
                         </div>
 
-                        {# Priority — hidden for engineers #}
+                        {# Priority #}
                         {% if not engineer_restricted %}
                         <div class="col-md-6">
-                            <label class="form-label">Priority</label>
+                            <label class="form-label required">Priority</label>
                             <select name="priority" class="form-select" required>
                                 {% for option in ['Low', 'Medium', 'High', 'Critical'] %}
                                 <option value="{{ option }}"
-                                    {% if defect and defect.priority == option %}selected{% endif %}>
+                                    {% if defect and defect.priority == option %}selected
+                                    {% elif not defect and option == 'Medium' %}selected{% endif %}>
                                     {{ option }}
                                 </option>
                                 {% endfor %}
@@ -72,7 +96,7 @@
 
                         {# Status #}
                         <div class="col-md-6">
-                            <label class="form-label">Status</label>
+                            <label class="form-label required">Status</label>
                             <select name="status" class="form-select" required>
                                 {% for option in ['Open', 'In Progress', 'Resolved'] %}
                                 <option value="{{ option }}"
@@ -86,29 +110,32 @@
 
                         {# Description #}
                         <div class="col-12">
-                            <label class="form-label">Description</label>
+                            <label class="form-label required">Description</label>
                             <textarea name="description" class="form-control" rows="3" required
-                                      placeholder="Detailed description of the observed defect..."
+                                      placeholder="Detailed description of the observed defect or anomaly..."
                                       {{ 'readonly' if engineer_restricted }}>{{ defect.description if defect else '' }}</textarea>
                         </div>
 
-                        {# Assigned User — Head/Manager only when editing; anyone on create #}
+                        {# Assigned User — scoped strictly to active workspace #}
                         {% if not engineer_restricted %}
                         <div class="col-md-6">
                             <label class="form-label">Assign To</label>
                             <select name="assigned_user_id" class="form-select">
                                 <option value="">— Unassigned —</option>
-                                {% for u in corp_users %}
+                                {% for u in engineers %}
                                 <option value="{{ u.id }}"
                                     {% if defect and defect.assigned_user_id == u.id %}selected{% endif %}>
-                                    {{ u.username }} ({{ u.role | title }})
+                                    {{ u.username }} ({{ (u.get_role_in_workspace(current_workspace.id) if current_workspace else u.role) | title }})
                                 </option>
                                 {% endfor %}
                             </select>
+                            <div class="form-text text-muted">
+                                Showing registered crew members in this grid sector.
+                            </div>
                         </div>
                         {% endif %}
 
-                        {# Expected Resolution — hidden for engineers #}
+                        {# Expected Resolution #}
                         {% if not engineer_restricted %}
                         <div class="col-md-6">
                             <label class="form-label">Expected Resolution</label>
@@ -117,12 +144,12 @@
                         </div>
                         {% endif %}
 
-                        {# Status Comment — shown on edit only #}
+                        {# Status Comment — shown on edit #}
                         {% if defect %}
                         <div class="col-12">
-                            <label class="form-label">Status Comment <span class="text-muted">(optional note for this update)</span></label>
+                            <label class="form-label">Audit Comment <span class="text-muted">(recorded in activity ledger)</span></label>
                             <textarea name="status_comment" class="form-control" rows="2"
-                                      placeholder="Describe what changed or what action was taken…"></textarea>
+                                      placeholder="Describe action taken, testing performed, or diagnostic notes…"></textarea>
                         </div>
                         {% endif %}
 
@@ -130,46 +157,47 @@
 
                     <div class="mt-4 d-flex gap-2">
                         <button type="submit" class="btn btn-primary">
-                            {% if defect %}Save Changes{% else %}Save Defect{% endif %}
+                            {% if defect %}Save Changes{% else %}Log Defect{% endif %}
                         </button>
-                        <a href="{{ url_for('defects') }}" class="btn btn-link">Cancel</a>
+                        <a href="{{ url_for('defects') }}" class="btn btn-outline-secondary">Cancel</a>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    {# ── Status History — shown when editing an existing defect ── #}
-    {% if defect and defect.status_logs %}
+    {# ── Audit Timeline on Edit ── #}
+    {% if defect %}
     <div class="col-12 col-lg-5">
-        <div class="card h-100">
+        <div class="card shadow-sm">
             <div class="card-header">
-                <h3 class="card-title">Status History</h3>
+                <h3 class="card-title">Defect Status Audit Timeline</h3>
             </div>
-            <div class="card-body" style="max-height:480px;overflow-y:auto;">
-                <ul class="list-unstyled mb-0">
+            <div class="card-body">
+                <ul class="steps steps-vertical">
                     {% for log in defect.status_logs %}
-                    <li class="mb-3 pb-3 {{ '' if loop.last else 'border-bottom' }}">
-                        <div class="d-flex align-items-center gap-2 mb-1">
-                            {% if log.old_status %}
-                            <span class="badge {% if log.old_status == 'Resolved' %}bg-green{% elif log.old_status == 'In Progress' %}bg-azure{% else %}bg-yellow{% endif %}">
-                                {{ log.old_status }}
-                            </span>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-                                 fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    <li class="step-item">
+                        <div class="h4 m-0 fw-bold">
+                            {% if log.new_status == 'Resolved' %}
+                            <span class="badge bg-green">Resolved</span>
+                            {% elif log.new_status == 'In Progress' %}
+                            <span class="badge bg-azure">In Progress</span>
+                            {% else %}
+                            <span class="badge bg-yellow">Open</span>
                             {% endif %}
-                            <span class="badge {% if log.new_status == 'Resolved' %}bg-green{% elif log.new_status == 'In Progress' %}bg-azure{% else %}bg-yellow{% endif %}">
-                                {{ log.new_status }}
-                            </span>
+                        </div>
+                        <div class="text-muted small">
+                            by <strong>{{ log.changed_by.username if log.changed_by else 'System' }}</strong>
+                            &bull; {{ log.changed_at.strftime('%Y-%m-%d %H:%M') }}
                         </div>
                         {% if log.comment %}
-                        <div class="text-muted small mb-1">{{ log.comment }}</div>
-                        {% endif %}
-                        <div class="text-muted" style="font-size:0.72rem;">
-                            {% if log.changed_by %}{{ log.changed_by.username }}{% else %}System{% endif %}
-                            &mdash; {{ log.changed_at.strftime('%Y-%m-%d %H:%M') }}
+                        <div class="text-secondary small mt-1 p-2 bg-light rounded border">
+                            &ldquo;{{ log.comment }}&rdquo;
                         </div>
+                        {% endif %}
                     </li>
+                    {% else %}
+                    <li class="step-item text-muted">No status logs recorded.</li>
                     {% endfor %}
                 </ul>
             </div>
@@ -177,18 +205,96 @@
     </div>
     {% endif %}
 </div>
-{% endblock %}
 
-{% block scripts %}
+{# ── Quick Add Equipment Modal ── #}
+<div class="modal fade" id="quickAddAssetModal" tabindex="-1" aria-labelledby="quickAddAssetModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('assets.add_asset') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="redirect_to" value="{{ url_for('add_defect') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="quickAddAssetModalLabel">Quick Add Grid Equipment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label required">Equipment / Component Name</label>
+                        <input type="text" name="asset_name" class="form-control"
+                               placeholder="e.g. 400kV Transformer T1, CB-01, Cooling Fan 1" required autofocus>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label required">Category</label>
+                        <select name="asset_type_id" id="quickAssetTypeSelect" class="form-select" required onchange="toggleQuickNewAssetType(this)">
+                            <option value="">— Select Category —</option>
+                            {% for at in asset_types %}
+                            <option value="{{ at.id }}">{{ at.name }}</option>
+                            {% endfor %}
+                            <option value="new">+ Enter New Category...</option>
+                        </select>
+                        <div id="quickNewAssetTypeBox" class="mt-2" style="display: none;">
+                            <input type="text" name="new_asset_type" id="quickNewAssetTypeInput" class="form-control form-control-sm"
+                                   placeholder="Enter new category name">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Substation / Bay Location</label>
+                        <select name="location_id" id="quickLocationSelect" class="form-select">
+                            <option value="">— Select Location —</option>
+                            {% for loc in locations %}
+                            <option value="{{ loc.id }}">{{ loc.full_path }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Parent Equipment <span class="text-muted">(Optional component)</span></label>
+                        <select name="parent_asset_id" class="form-select">
+                            <option value="">— None (Primary equipment) —</option>
+                            {% for pa in parent_candidates %}
+                            <option value="{{ pa.id }}">Part of: {{ pa.asset_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-link link-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary ms-auto">+ Save &amp; Select</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 function onAssetChange() {
-    const select = document.getElementById('assetSelect');
-    const locationInput = document.getElementById('assetLocation');
-    if (!select || !locationInput) return;
-    const selectedOption = select.options[select.selectedIndex];
-    const loc = selectedOption.getAttribute('data-location') || '';
-    locationInput.value = loc;
+    var select = document.getElementById('assetSelect');
+    var selectedOption = select.options[select.selectedIndex];
+    var locationInput = document.getElementById('assetLocation');
+    if (selectedOption && selectedOption.dataset.location) {
+        locationInput.value = selectedOption.dataset.location;
+    } else {
+        locationInput.value = '';
+    }
 }
-document.addEventListener('DOMContentLoaded', onAssetChange);
+
+function toggleQuickNewAssetType(selectEl) {
+    const box = document.getElementById('quickNewAssetTypeBox');
+    const input = document.getElementById('quickNewAssetTypeInput');
+    if (selectEl.value === 'new') {
+        box.style.display = 'block';
+        input.required = true;
+        input.focus();
+    } else {
+        box.style.display = 'none';
+        input.required = false;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    onAssetChange();
+});
 </script>
 {% endblock %}

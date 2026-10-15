@@ -9,19 +9,130 @@
     {# ── Anti-flash: apply saved theme BEFORE any CSS renders ── #}
     <script>
         (function(){
-            var t = localStorage.getItem('powergrid-theme');
-            if (t === 'dark') document.documentElement.setAttribute('data-bs-theme','dark');
+            var t = localStorage.getItem('tabler-theme') || localStorage.getItem('powergrid-theme') || 'light';
+            document.documentElement.setAttribute('data-bs-theme', t);
         })();
     </script>
     <style>
-        /* Prevent white flash: set background before Tabler CSS loads */
+        /* Base anti-flash backgrounds */
         html[data-bs-theme="dark"], html[data-bs-theme="dark"] body {
-            background-color: #1a1e2e;
+            background-color: #111827;
             color-scheme: dark;
         }
         html:not([data-bs-theme="dark"]), html:not([data-bs-theme="dark"]) body {
-            background-color: #f1f5f9;
+            background-color: #f8fafc;
             color-scheme: light;
+        }
+
+        /* ── Comprehensive Dark Theme Overrides & Polish ── */
+        [data-bs-theme="dark"] {
+            color-scheme: dark;
+            --tblr-body-bg: #111827;
+            --tblr-body-color: #e5e7eb;
+            --tblr-card-bg: #1f2937;
+            --tblr-border-color: rgba(255, 255, 255, 0.1);
+        }
+        [data-bs-theme="dark"] body {
+            background-color: #111827;
+            color: #e5e7eb;
+        }
+        [data-bs-theme="dark"] .card {
+            background-color: #1f2937 !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+            color: #e5e7eb;
+        }
+        [data-bs-theme="dark"] .card-header,
+        [data-bs-theme="dark"] .card-footer {
+            background-color: transparent !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
+        }
+        [data-bs-theme="dark"] .navbar {
+            background-color: #111827 !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
+            color: #e5e7eb;
+        }
+        [data-bs-theme="dark"] .navbar-vertical {
+            background-color: #111827 !important;
+            border-color: rgba(255, 255, 255, 0.08) !important;
+        }
+        [data-bs-theme="dark"] .bg-light {
+            background-color: rgba(255, 255, 255, 0.05) !important;
+            color: #e5e7eb !important;
+        }
+        [data-bs-theme="dark"] .text-dark {
+            color: #f9fafb !important;
+        }
+        [data-bs-theme="dark"] .text-muted {
+            color: #9ca3af !important;
+        }
+        [data-bs-theme="dark"] .border {
+            border-color: rgba(255, 255, 255, 0.1) !important;
+        }
+        [data-bs-theme="dark"] .border-bottom,
+        [data-bs-theme="dark"] .border-top,
+        [data-bs-theme="dark"] .border-start,
+        [data-bs-theme="dark"] .border-end {
+            border-color: rgba(255, 255, 255, 0.1) !important;
+        }
+        [data-bs-theme="dark"] .table {
+            color: #e5e7eb;
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+        [data-bs-theme="dark"] .table > :not(caption) > * > * {
+            background-color: transparent;
+            border-bottom-color: rgba(255, 255, 255, 0.08);
+            color: #e5e7eb;
+        }
+        [data-bs-theme="dark"] .table-hover > tbody > tr:hover > * {
+            background-color: rgba(255, 255, 255, 0.04) !important;
+        }
+        [data-bs-theme="dark"] .form-control,
+        [data-bs-theme="dark"] .form-select {
+            background-color: #111827;
+            border-color: rgba(255, 255, 255, 0.15);
+            color: #f9fafb;
+        }
+        [data-bs-theme="dark"] .form-control:focus,
+        [data-bs-theme="dark"] .form-select:focus {
+            background-color: #111827;
+            border-color: #3b82f6;
+            color: #fff;
+            box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+        }
+        [data-bs-theme="dark"] .dropdown-menu {
+            background-color: #1f2937;
+            border-color: rgba(255, 255, 255, 0.15);
+            color: #e5e7eb;
+        }
+        [data-bs-theme="dark"] .dropdown-item {
+            color: #d1d5db;
+        }
+        [data-bs-theme="dark"] .dropdown-item:hover,
+        [data-bs-theme="dark"] .dropdown-item:focus {
+            background-color: rgba(255, 255, 255, 0.08);
+            color: #fff;
+        }
+        [data-bs-theme="dark"] .dropdown-divider {
+            border-top-color: rgba(255, 255, 255, 0.08);
+        }
+        [data-bs-theme="dark"] .modal-content {
+            background-color: #1f2937;
+            border-color: rgba(255, 255, 255, 0.15);
+            color: #e5e7eb;
+        }
+        [data-bs-theme="dark"] .modal-header,
+        [data-bs-theme="dark"] .modal-footer {
+            border-color: rgba(255, 255, 255, 0.08);
+        }
+        [data-bs-theme="dark"] .btn-close {
+            filter: invert(1) grayscale(100%) brightness(200%);
+        }
+        [data-bs-theme="dark"] .bg-body-tertiary {
+            background-color: rgba(255, 255, 255, 0.04) !important;
+        }
+        [data-bs-theme="dark"] .settings-hero {
+            background: linear-gradient(135deg, rgba(32,107,196,0.15), rgba(139,92,246,0.1)) !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
         }
     </style>
 
@@ -186,36 +297,64 @@
     </div>
 
     <script src="{{ url_for('static', filename='js/tabler.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/tabler-theme.min.js') }}"></script>
     <script>
-        (function () {
-            const storageKey = 'powergrid-theme';
+        function getSavedTheme() {
+            return localStorage.getItem('tabler-theme') || localStorage.getItem('powergrid-theme') || 'light';
+        }
+
+        function setTheme(theme) {
             const root = document.documentElement;
-
-            function applyTheme(theme) {
-                const resolvedTheme = theme === 'dark' ? 'dark' : 'light';
-                root.setAttribute('data-bs-theme', resolvedTheme);
-                localStorage.setItem(storageKey, resolvedTheme);
-
-                const toggleButton = document.getElementById('themeToggle');
-                if (toggleButton) {
-                    toggleButton.textContent = resolvedTheme === 'dark' ? 'Light Mode' : 'Dark Mode';
-                }
+            root.setAttribute('data-bs-theme', theme);
+            if (document.body) {
+                document.body.setAttribute('data-bs-theme', theme);
             }
+            localStorage.setItem('tabler-theme', theme);
+            localStorage.setItem('powergrid-theme', theme);
+            updateThemeUI(theme);
+        }
 
-            /* Theme already applied by head script; sync toggle button text */
-            const savedTheme = localStorage.getItem(storageKey) || 'light';
-            applyTheme(savedTheme);
+        function toggleTheme() {
+            const current = getSavedTheme();
+            const target = current === 'dark' ? 'light' : 'dark';
+            setTheme(target);
+        }
 
-            window.addEventListener('DOMContentLoaded', function () {
-                const toggleButton = document.getElementById('themeToggle');
-                if (toggleButton) {
-                    toggleButton.addEventListener('click', function () {
-                        const currentTheme = root.getAttribute('data-bs-theme') || 'light';
-                        applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
-                    });
+        function updateThemeUI(theme) {
+            document.querySelectorAll('.theme-icon-sun').forEach(function(el) {
+                el.style.display = (theme === 'dark') ? 'inline-block' : 'none';
+            });
+            document.querySelectorAll('.theme-icon-moon').forEach(function(el) {
+                el.style.display = (theme === 'dark') ? 'none' : 'inline-block';
+            });
+            document.querySelectorAll('.theme-status-badge').forEach(function(el) {
+                el.className = (theme === 'dark') ? 'badge bg-purple-lt theme-status-badge' : 'badge bg-yellow-lt theme-status-badge';
+                el.textContent = (theme === 'dark') ? 'Dark Active' : 'Light Active';
+            });
+            document.querySelectorAll('.theme-toggle-text').forEach(function(el) {
+                el.textContent = (theme === 'dark') ? 'Light Mode' : 'Dark Mode';
+            });
+            document.querySelectorAll('#themeToggle, .theme-toggle-btn').forEach(function(btn) {
+                if (theme === 'dark') {
+                    btn.className = 'btn btn-outline-warning btn-sm';
+                    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm text-yellow me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"><circle cx="12" cy="12" r="4"></circle><path d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7"></path></svg> Switch to Light Mode';
+                } else {
+                    btn.className = 'btn btn-outline-secondary btn-sm';
+                    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm text-azure me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"><path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z"></path></svg> Switch to Dark Mode';
                 }
             });
+        }
+
+        // Initialize immediately and after DOM ready
+        (function() {
+            var active = getSavedTheme();
+            setTheme(active);
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    updateThemeUI(active);
+                });
+            } else {
+                updateThemeUI(active);
+            }
         })();
     </script>
     {% block scripts %}{% endblock %}

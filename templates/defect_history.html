@@ -1,182 +1,272 @@
 {% extends "base.html" %}
 
-{% block title %}Defect History - PowerGrid{% endblock %}
+{% block title %}Resolved Defect History – PowerGrid{% endblock %}
 
 {% block head %}
 <style>
-    .history-hero {
-        background: linear-gradient(135deg, rgba(98, 105, 118, 0.08), rgba(45, 212, 191, 0.08));
-        border: 1px solid rgba(98, 105, 118, 0.12);
-        border-radius: 1rem;
-        padding: 1.25rem;
+    .defect-card-selected {
+        border-left: 4px solid #2fb344 !important;
+        background-color: rgba(47, 179, 68, 0.04);
     }
-
-    .history-card-value {
-        font-size: 1.6rem;
-        font-weight: 700;
-        line-height: 1;
+    .timeline-item {
+        position: relative;
+        padding-left: 1.5rem;
+        border-left: 2px solid rgba(98, 105, 118, 0.2);
     }
-
-    .history-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 0.35rem 0.6rem;
-        border-radius: 999px;
-        font-size: 0.875rem;
-        font-weight: 600;
-        background: rgba(47, 179, 68, 0.15);
-        color: #206b2f;
-    }
-
-    .table-responsive {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -5px;
+        top: 4px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #2fb344;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="history-hero mb-4">
-    <div class="row align-items-center g-3">
-        <div class="col-12 col-lg">
-            <div class="page-pretitle">Archive</div>
-            <h2 class="page-title mb-1">Defect History</h2>
-            <p class="page-subtitle text-muted mb-0">Resolved defects are archived here so the live dashboard and active defect list stay focused on current work.</p>
+<div class="page-header mb-4 d-print-none">
+    <div class="row align-items-center">
+        <div class="col">
+            <div class="page-pretitle">Audit &amp; Archival Records</div>
+            <h2 class="page-title">Resolved Defect History</h2>
+            <p class="text-muted mb-0">Immutable historical archive of resolved equipment faults, lifecycle transitions, and SLA performance.</p>
         </div>
-        <div class="col-12 col-lg-auto">
-            <a href="{{ url_for('defects') }}" class="btn btn-primary w-100 w-lg-auto">View Active Defects</a>
+        <div class="col-auto ms-auto d-print-none">
+            <a href="{{ url_for('defects') }}" class="btn btn-outline-primary d-flex align-items-center gap-1">
+                View Active Defects
+            </a>
         </div>
     </div>
 </div>
 
-<div class="card mb-4">
+{# ── Time Range Filter Card ── #}
+<div class="card mb-4 shadow-sm">
     <div class="card-body">
         <form method="get" class="row g-3 align-items-end">
             <input type="hidden" name="q" value="{{ search_query }}">
             <div class="col-12 col-md-3">
-                <label class="form-label">Time Range</label>
+                <label class="form-label">Time Window</label>
                 <select name="range" class="form-select">
                     {% for option in ['all', 'today', '7d', '30d', 'custom'] %}
                     <option value="{{ option }}" {% if selected_range == option %}selected{% endif %}>
-                        {{ 'All time' if option == 'all' else ('Today' if option == 'today' else ('Last 7 days' if option == '7d' else ('Last 30 days' if option == '30d' else 'Custom'))) }}
+                        {{ 'All time' if option == 'all' else ('Today' if option == 'today' else ('Last 7 days' if option == '7d' else ('Last 30 days' if option == '30d' else 'Custom Range'))) }}
                     </option>
                     {% endfor %}
                 </select>
             </div>
             <div class="col-12 col-md-3">
-                <label class="form-label">Start</label>
+                <label class="form-label">From</label>
                 <input type="datetime-local" name="start" class="form-control" value="{{ filter_start }}">
             </div>
             <div class="col-12 col-md-3">
-                <label class="form-label">End</label>
+                <label class="form-label">To</label>
                 <input type="datetime-local" name="end" class="form-control" value="{{ filter_end }}">
             </div>
             <div class="col-12 col-md-3 d-flex gap-2">
-                <button type="submit" class="btn btn-primary flex-grow-1">Filter</button>
+                <button type="submit" class="btn btn-primary flex-grow-1">Apply Filter</button>
                 <a href="{{ url_for('defect_history') }}" class="btn btn-outline-secondary">Reset</a>
             </div>
         </form>
     </div>
 </div>
 
-<div class="card mb-4">
+{# ── Selected Resolved Defect Deep-Dive (Defect Details & Audit Trail) ── #}
+{% if selected_defect %}
+<div class="card mb-4 shadow-sm border-success">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-green text-white fs-6 px-2 py-1">DFT-{{ selected_defect.id }}</span>
+            <h3 class="card-title mb-0">{{ selected_defect.asset.asset_name }}</h3>
+            <span class="badge bg-blue-lt">{{ selected_defect.asset.asset_type.name }}</span>
+            {% if selected_defect.asset.is_component %}
+            <span class="badge bg-purple-lt">↳ Component of {{ selected_defect.asset.parent_name }}</span>
+            {% endif %}
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge {% if selected_defect.priority == 'Critical' %}bg-red{% elif selected_defect.priority == 'High' %}bg-orange{% elif selected_defect.priority == 'Medium' %}bg-yellow{% else %}bg-green{% endif %}">
+                {{ selected_defect.priority }}
+            </span>
+            <span class="badge bg-green">Resolved</span>
+            <span class="badge {{ selected_defect.sla_info.tone }}">
+                {{ selected_defect.sla_info.label }}
+            </span>
+            {% if current_user.role != 'viewer' %}
+            <a href="{{ url_for('edit_defect', defect_id=selected_defect.id) }}" class="btn btn-sm btn-outline-secondary ms-2">
+                Reopen / Edit
+            </a>
+            {% endif %}
+        </div>
+    </div>
     <div class="card-body">
-        <form method="get" class="row g-3 align-items-end">
-            <input type="hidden" name="range" value="{{ selected_range }}">
-            <input type="hidden" name="start" value="{{ filter_start }}">
-            <input type="hidden" name="end" value="{{ filter_end }}">
-            <input type="hidden" name="q" value="{{ search_query }}">
-            <div class="col-12 col-md-8">
-                <label class="form-label">Select Resolved Defect</label>
-                <select name="defect_id" class="form-select" onchange="this.form.submit()">
-                    {% for defect in defects %}
-                    <option value="{{ defect.id }}" {% if selected_defect and selected_defect.id == defect.id %}selected{% endif %}>
-                        DFT-{{ defect.id }} | {{ defect.asset.asset_name }} | {{ defect.priority }} | {{ defect.reported_at.strftime('%Y-%m-%d %H:%M') if defect.reported_at else '-' }}
-                    </option>
+        <div class="row g-4">
+            <div class="col-12 col-lg-7">
+                <div class="mb-3">
+                    <label class="form-label text-muted small text-uppercase fw-bold">Location Hierarchy</label>
+                    <div class="d-flex align-items-center flex-wrap gap-1 fs-5 text-dark fw-medium">
+                        {% for type_name, loc_name in selected_defect.asset.location.path_list %}
+                        <span class="badge bg-azure-lt">{{ type_name }}: {{ loc_name }}</span>
+                        {% if not loop.last %}
+                        <span class="text-muted">&rsaquo;</span>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label text-muted small text-uppercase fw-bold">Initial Fault Description</label>
+                    <div class="p-3 bg-light rounded border text-body">
+                        {{ selected_defect.description }}
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-4">
+                        <label class="form-label text-muted small text-uppercase fw-bold">Resolved By / Assigned</label>
+                        <div>
+                            {% if selected_defect.assigned_user %}
+                            <span class="fw-semibold">{{ selected_defect.assigned_user.username }}</span>
+                            {% else %}
+                            <span class="text-muted">Unassigned</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label text-muted small text-uppercase fw-bold">Reported Date</label>
+                        <div class="fw-medium">
+                            {{ selected_defect.reported_at.strftime('%Y-%m-%d %H:%M') if selected_defect.reported_at else '-' }}
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label text-muted small text-uppercase fw-bold">Resolution Date</label>
+                        <div class="fw-medium text-success">
+                            {{ selected_defect.resolved_at.strftime('%Y-%m-%d %H:%M') if selected_defect.resolved_at else '-' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# ── Resolution Audit Ledger Timeline ── #}
+            <div class="col-12 col-lg-5 border-start-lg ps-lg-4">
+                <h4 class="card-title mb-3 d-flex align-items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon text-success" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"><path d="M5 12l5 5l10 -10"/></svg>
+                    Resolution Audit Ledger
+                </h4>
+                {% if selected_defect.status_logs %}
+                <div class="timeline" style="max-height: 240px; overflow-y: auto;">
+                    {% for log in selected_defect.status_logs %}
+                    <div class="timeline-item mb-3 pb-2">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span class="fw-medium">
+                                {% if log.old_status %}
+                                <span class="badge bg-secondary-lt">{{ log.old_status }}</span> &rarr;
+                                {% endif %}
+                                <span class="badge bg-green-lt">{{ log.new_status }}</span>
+                            </span>
+                            <span class="text-muted small" style="font-size:0.75rem;">
+                                {{ log.changed_at.strftime('%Y-%m-%d %H:%M') }}
+                            </span>
+                        </div>
+                        <div class="small text-muted mt-1">
+                            By: <strong>{{ log.changed_by.username if log.changed_by else 'System' }}</strong>
+                            {% if log.comment %}
+                            &mdash; <em>"{{ log.comment }}"</em>
+                            {% endif %}
+                        </div>
+                    </div>
                     {% endfor %}
-                </select>
-            </div>
-            <div class="col-12 col-md-4">
-                <button type="submit" class="btn btn-primary w-100">View Details</button>
-            </div>
-        </form>
-        {% if selected_defect %}
-        <div class="row g-3 mt-3">
-            <div class="col-12 col-lg-6">
-                <div class="border rounded-3 p-3 h-100">
-                    <div class="text-muted small mb-1">Resolved Description</div>
-                    <div class="fw-medium">{{ selected_defect.asset.asset_name }} ({{ selected_defect.asset.location.name }})</div>
-                    <div class="text-muted mt-2">{{ selected_defect.description or 'No description provided.' }}</div>
                 </div>
-            </div>
-            <div class="col-12 col-lg-6">
-                <div class="border rounded-3 p-3 h-100">
-                    <div class="text-muted small mb-1">Details</div>
-                    <div>Assigned Engineer: {{ selected_defect.assigned_user.username if selected_defect.assigned_user else 'Unassigned' }}</div>
-                    <div>Expected Resolution: {{ selected_defect.expected_resolution.strftime('%Y-%m-%d %H:%M') if selected_defect.expected_resolution else '-' }}</div>
-                    <div>Reported: {{ selected_defect.reported_at.strftime('%Y-%m-%d %H:%M') if selected_defect.reported_at else '-' }}</div>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-    </div>
-</div>
-
-<div class="row row-deck row-cards mb-4">
-    <div class="col-12 col-sm-6 col-xl-4">
-        <div class="card card-sm h-100">
-            <div class="card-body">
-                <div class="text-muted">Resolved Defects</div>
-                <div class="history-card-value">{{ defects|length }}</div>
+                {% else %}
+                <div class="text-muted small">No audit ledger logs recorded.</div>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
+{% endif %}
 
-<div class="card">
+{# ── Resolved Defects Master Table ── #}
+<div class="card shadow-sm">
+    <div class="card-header">
+        <h3 class="card-title">Resolved Defect Archive</h3>
+        <div class="card-options">
+            <span class="text-muted small">{{ defects|length }} resolved issue(s)</span>
+        </div>
+    </div>
     <div class="table-responsive">
-        <table class="table card-table table-vcenter text-nowrap">
+        <table class="table card-table table-vcenter table-hover text-nowrap">
             <thead>
                 <tr>
-                    <th>S. No.</th>
                     <th>ID</th>
-                    <th>Asset Name</th>
-                    <th>Location</th>
+                    <th>Equipment &amp; Component</th>
+                    <th>Location Path</th>
                     <th>Priority</th>
-                    <th>Assigned Engineer</th>
-                    <th>Date Reported</th>
-                    <th>Expected Resolution</th>
-                    <th>Actions</th>
+                    <th>SLA Performance</th>
+                    <th>Assigned To</th>
+                    <th>Reported</th>
+                    <th>Resolved At</th>
+                    <th class="text-end">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for defect in defects %}
-                <tr>
-                    <td>{{ loop.index }}</td>
-                    <td>DFT-{{ defect.id }}</td>
+                <tr class="{{ 'defect-card-selected' if selected_defect and selected_defect.id == defect.id else '' }}"
+                    style="cursor: pointer;"
+                    onclick="window.location='{{ url_for('defect_history', defect_id=defect.id, range=selected_range, q=search_query) }}';">
+                    <td class="fw-bold text-success">DFT-{{ defect.id }}</td>
                     <td>
-                        <div class="fw-medium">{{ defect.asset.asset_name }}</div>
-                        <div class="text-muted small">Resolved</div>
+                        <div class="fw-semibold">{{ defect.asset.asset_name }}</div>
+                        <div class="text-muted small">
+                            <span class="badge bg-light text-dark">{{ defect.asset.asset_type.name }}</span>
+                            {% if defect.asset.is_component %}
+                            <span class="badge bg-purple-lt">↳ Part of {{ defect.asset.parent_name }}</span>
+                            {% endif %}
+                        </div>
                     </td>
-                    <td>{{ defect.asset.location.name }}</td>
+                    <td>
+                        <span class="text-muted small" title="{{ defect.asset.location.full_path }}">
+                            {{ defect.asset.location.full_path }}
+                        </span>
+                    </td>
                     <td>
                         <span class="badge {% if defect.priority == 'Critical' %}bg-red{% elif defect.priority == 'High' %}bg-orange{% elif defect.priority == 'Medium' %}bg-yellow{% else %}bg-green{% endif %}">
                             {{ defect.priority }}
                         </span>
                     </td>
-                    <td>{{ defect.assigned_user.username if defect.assigned_user else 'Unassigned' }}</td>
-                    <td>{{ defect.reported_at.strftime('%Y-%m-%d %H:%M') if defect.reported_at else '-' }}</td>
-                    <td>{{ defect.expected_resolution.strftime('%Y-%m-%d %H:%M') if defect.expected_resolution else '-' }}</td>
                     <td>
-                        {% if current_user.role in ['head', 'manager'] %}
-                        <form method="POST" action="{{ url_for('delete_defect', defect_id=defect.id) }}" class="d-inline" onsubmit="return confirm('Delete this resolved defect?');">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <input type="hidden" name="return_to" value="history">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                        </form>
-                        {% else %}
-                        <span class="text-muted small">—</span>
-                        {% endif %}
+                        <span class="badge {{ defect.sla_info.tone }}">{{ defect.sla_info.label }}</span>
+                    </td>
+                    <td>
+                        {{ defect.assigned_user.username if defect.assigned_user else 'Unassigned' }}
+                    </td>
+                    <td class="text-muted small">
+                        {{ defect.reported_at.strftime('%Y-%m-%d %H:%M') if defect.reported_at else '-' }}
+                    </td>
+                    <td class="text-muted small">
+                        {{ defect.resolved_at.strftime('%Y-%m-%d %H:%M') if defect.resolved_at else '-' }}
+                    </td>
+                    <td class="text-end" onclick="event.stopPropagation();">
+                        <div class="btn-group">
+                            <a href="{{ url_for('defect_history', defect_id=defect.id, range=selected_range, q=search_query) }}" class="btn btn-sm btn-outline-secondary">
+                                View
+                            </a>
+                            {% if current_user.role != 'viewer' %}
+                            <a href="{{ url_for('edit_defect', defect_id=defect.id) }}" class="btn btn-sm btn-outline-primary">
+                                Reopen
+                            </a>
+                            {% endif %}
+                            {% if current_user.role in ['head', 'manager'] %}
+                            <form method="POST" action="{{ url_for('delete_defect', defect_id=defect.id) }}" class="d-inline" onsubmit="return confirm('Permanently remove resolved record DFT-{{ defect.id }}?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="return_to" value="history">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    Delete
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
                 {% else %}

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Equipment Defect Summary - PowerGrid{% endblock %}
+{% block title %}Equipment & Component Inventory – PowerGrid{% endblock %}
 
 {% block head %}
 <style>
@@ -10,11 +10,21 @@
         border-radius: 1rem;
         padding: 1.25rem;
     }
-
     .stat-card-value {
         font-size: 1.6rem;
         font-weight: 700;
         line-height: 1;
+    }
+    .component-indent {
+        padding-left: 2rem !important;
+        position: relative;
+    }
+    .component-indent::before {
+        content: '↳';
+        position: absolute;
+        left: 0.85rem;
+        color: #6366f1;
+        font-weight: bold;
     }
 </style>
 {% endblock %}
@@ -23,32 +33,46 @@
 <div class="assets-hero mb-4">
     <div class="row align-items-center g-3">
         <div class="col-12 col-lg">
-            <div class="page-pretitle">Asset Management</div>
-            <h2 class="page-title mb-1">Equipment Defect Summary</h2>
-            <p class="page-subtitle text-muted mb-0">Master equipment tracked with hierarchical physical locations and real-time defect aggregation.</p>
+            <div class="page-pretitle text-primary fw-bold">Grid Infrastructure</div>
+            <h2 class="page-title mb-1">Equipment &amp; Component Inventory</h2>
+            <p class="page-subtitle text-muted mb-0">
+                Physical transmission assets: Primary Equipment, Substation Bays, and Child Components.
+            </p>
+        </div>
+        <div class="col-12 col-lg-auto d-flex gap-2 flex-wrap">
+            {% if (current_workspace_role or current_user.role) in ['head', 'manager', 'engineer'] %}
+            <button type="button" class="btn btn-primary d-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#addAssetModal">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"><path d="M12 5v14M5 12h14"/></svg>
+                + Add Equipment
+            </button>
+            <a href="{{ url_for('add_defect') }}" class="btn btn-outline-secondary d-flex align-items-center gap-1">
+                Log Defect
+            </a>
+            {% endif %}
         </div>
     </div>
 </div>
 
-<div class="card mb-4">
+{# ── Time Filter ── #}
+<div class="card mb-4 shadow-sm">
     <div class="card-body">
         <form method="get" class="row g-3 align-items-end">
             <div class="col-12 col-md-3">
-                <label class="form-label">Time Range</label>
+                <label class="form-label">Time Window</label>
                 <select name="range" class="form-select">
                     {% for option in ['all', 'today', '7d', '30d', 'custom'] %}
                     <option value="{{ option }}" {% if selected_range == option %}selected{% endif %}>
-                        {{ 'All time' if option == 'all' else ('Today' if option == 'today' else ('Last 7 days' if option == '7d' else ('Last 30 days' if option == '30d' else 'Custom'))) }}
+                        {{ 'All time' if option == 'all' else ('Today' if option == 'today' else ('Last 7 days' if option == '7d' else ('Last 30 days' if option == '30d' else 'Custom Range'))) }}
                     </option>
                     {% endfor %}
                 </select>
             </div>
             <div class="col-12 col-md-3">
-                <label class="form-label">Start</label>
+                <label class="form-label">From</label>
                 <input type="datetime-local" name="start" class="form-control" value="{{ filter_start }}">
             </div>
             <div class="col-12 col-md-3">
-                <label class="form-label">End</label>
+                <label class="form-label">To</label>
                 <input type="datetime-local" name="end" class="form-control" value="{{ filter_end }}">
             </div>
             <div class="col-12 col-md-3 d-flex gap-2">
@@ -59,73 +83,249 @@
     </div>
 </div>
 
+{# ── Stat Metric Cards ── #}
 <div class="row row-deck row-cards mb-4">
     <div class="col-12 col-sm-3">
-        <div class="card card-sm h-100">
+        <div class="card card-sm h-100 shadow-sm">
             <div class="card-body">
-                <div class="text-muted">Total Assets</div>
-                <div class="stat-card-value">{{ total_assets }}</div>
+                <div class="text-muted small text-uppercase fw-bold">Tracked Assets</div>
+                <div class="stat-card-value text-primary mt-1">{{ total_assets }}</div>
+                <div class="text-muted small mt-1">
+                    {{ primary_assets_count }} primary &bull; {{ components_count }} components
+                </div>
             </div>
         </div>
     </div>
     <div class="col-12 col-sm-3">
-        <div class="card card-sm h-100">
+        <div class="card card-sm h-100 shadow-sm">
             <div class="card-body">
-                <div class="text-muted">Total Defects</div>
-                <div class="stat-card-value">{{ total_defects }}</div>
+                <div class="text-muted small text-uppercase fw-bold">Active Faults</div>
+                <div class="stat-card-value text-red mt-1">{{ active_defects }}</div>
+                <div class="text-muted small mt-1">Open or In Progress</div>
             </div>
         </div>
     </div>
     <div class="col-12 col-sm-3">
-        <div class="card card-sm h-100">
+        <div class="card card-sm h-100 shadow-sm">
             <div class="card-body">
-                <div class="text-muted">Active Defects</div>
-                <div class="stat-card-value">{{ active_defects }}</div>
+                <div class="text-muted small text-uppercase fw-bold">Resolved Defects</div>
+                <div class="stat-card-value text-green mt-1">{{ resolved_defects }}</div>
+                <div class="text-muted small mt-1">Closed successfully</div>
             </div>
         </div>
     </div>
     <div class="col-12 col-sm-3">
-        <div class="card card-sm h-100">
+        <div class="card card-sm h-100 shadow-sm">
             <div class="card-body">
-                <div class="text-muted">Resolved Defects</div>
-                <div class="stat-card-value">{{ resolved_defects }}</div>
+                <div class="text-muted small text-uppercase fw-bold">Total History</div>
+                <div class="stat-card-value text-azure mt-1">{{ total_defects }}</div>
+                <div class="text-muted small mt-1">Defects recorded</div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card">
+{# ── Equipment Table ── #}
+<div class="card shadow-sm">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h3 class="card-title mb-0">Equipment &amp; Component Hierarchy</h3>
+        {% if (current_workspace_role or current_user.role) in ['head', 'manager', 'engineer'] %}
+        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addAssetModal">
+            + Add Equipment
+        </button>
+        {% endif %}
+    </div>
+
+    {% if assets %}
     <div class="table-responsive">
-        <table class="table card-table table-vcenter text-nowrap">
+        <table class="table card-table table-vcenter table-hover">
             <thead>
                 <tr>
-                    <th>Equipment</th>
-                    <th>Type</th>
-                    <th>Location</th>
-                    <th>Total Defects</th>
-                    <th>Active Defects</th>
-                    <th>Resolved Defects</th>
-                    <th>Last Activity</th>
+                    <th>Equipment / Component Name</th>
+                    <th>Category</th>
+                    <th>Substation &amp; Bay Location</th>
+                    <th class="text-center">Active Faults</th>
+                    <th class="text-center">Resolved</th>
+                    <th class="text-center">Total History</th>
+                    <th>Last Event</th>
+                    <th class="text-end">Action</th>
                 </tr>
             </thead>
             <tbody>
-                {% for asset in assets %}
+                {% for a in assets %}
                 <tr>
-                    <td class="fw-medium">{{ asset.asset_name }}</td>
-                    <td><span class="badge bg-blue-lt">{{ asset.asset_type }}</span></td>
-                    <td class="text-muted">{{ asset.location }}</td>
-                    <td>{{ asset.total_defects }}</td>
-                    <td>{{ asset.active_defects }}</td>
-                    <td>{{ asset.resolved_defects }}</td>
-                    <td>{{ asset.last_activity.strftime('%Y-%m-%d %H:%M') if asset.last_activity else '-' }}</td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="7" class="text-center text-muted py-4">No equipment found.</td>
+                    <td class="{{ 'component-indent' if a.is_component else '' }}">
+                        <div class="d-flex align-items-center gap-2">
+                            {% if a.is_component %}
+                            <div>
+                                <span class="fw-semibold text-dark">{{ a.asset_name }}</span>
+                                <div class="text-muted small">Part of: <strong class="text-primary">{{ a.parent_name }}</strong></div>
+                            </div>
+                            {% else %}
+                            <div>
+                                <span class="fw-bold text-dark">{{ a.asset_name }}</span>
+                                {% if a.child_count > 0 %}
+                                <span class="badge bg-purple-lt ms-1">{{ a.child_count }} component(s)</span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge bg-blue-lt">{{ a.asset_type }}</span>
+                    </td>
+                    <td>
+                        <div class="small fw-medium text-dark">{{ a.location_path }}</div>
+                    </td>
+                    <td class="text-center">
+                        {% if a.active_defects > 0 %}
+                        <span class="badge bg-red text-white fw-bold">{{ a.active_defects }}</span>
+                        {% else %}
+                        <span class="badge bg-success-lt">0</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <span class="badge bg-green-lt">{{ a.resolved_defects }}</span>
+                    </td>
+                    <td class="text-center text-muted fw-semibold">{{ a.total_defects }}</td>
+                    <td class="small text-muted">
+                        {% if a.last_activity %}
+                        {{ a.last_activity.strftime('%Y-%m-%d %H:%M') }}
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a href="{{ url_for('defects', q=a.asset_name) }}" class="btn btn-sm btn-outline-primary">
+                            View Faults
+                        </a>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
+    {% else %}
+    <div class="card-body py-5 text-center">
+        <div class="empty">
+            <div class="empty-icon text-primary mb-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none">
+                    <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+                    <line x1="9" y1="9" x2="9" y2="15"></line>
+                    <line x1="15" y1="9" x2="15" y2="15"></line>
+                    <line x1="9" y1="12" x2="15" y2="12"></line>
+                </svg>
+            </div>
+            <p class="empty-title h3">No Equipment Registered Yet</p>
+            <p class="empty-subtitle text-muted">
+                This transmission sector doesn't have any equipment registered yet.<br>
+                Add your substation transformers, circuit breakers, and bay equipment to start tracking faults.
+            </p>
+            <div class="empty-action">
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addAssetModal">
+                    + Add Your First Equipment
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
+
+{# ── Add Equipment Modal ── #}
+<div class="modal fade" id="addAssetModal" tabindex="-1" aria-labelledby="addAssetModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('assets.add_asset') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addAssetModalLabel">Register Grid Equipment / Component</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label required">Equipment / Component Name</label>
+                        <input type="text" name="asset_name" class="form-control"
+                               placeholder="e.g. 400kV Transformer T1, CB-01, Cooling Fan 1" required autofocus>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label required">Equipment Category</label>
+                        <select name="asset_type_id" id="assetTypeSelect" class="form-select" required onchange="toggleNewAssetType(this)">
+                            <option value="">— Select Category —</option>
+                            {% for at in asset_types %}
+                            <option value="{{ at.id }}">{{ at.name }}</option>
+                            {% endfor %}
+                            <option value="new">+ Enter New Category...</option>
+                        </select>
+                        <div id="newAssetTypeBox" class="mt-2" style="display: none;">
+                            <input type="text" name="new_asset_type" id="newAssetTypeInput" class="form-control form-control-sm"
+                                   placeholder="Enter new category name, e.g. Capacitor Bank">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Substation &amp; Bay Location</label>
+                        <select name="location_id" id="locationSelect" class="form-select">
+                            <option value="">— Select Location —</option>
+                            {% for loc in locations %}
+                            <option value="{{ loc.id }}">{{ loc.full_path }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text text-muted">
+                            Physical site hierarchy (Region &rarr; Substation &rarr; Bay).
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Parent Equipment <span class="text-muted">(Optional child component)</span></label>
+                        <select name="parent_asset_id" id="parentAssetSelect" class="form-select" onchange="toggleParentLocation(this)">
+                            <option value="">— None (This is primary equipment) —</option>
+                            {% for pa in parent_candidates %}
+                            <option value="{{ pa.id }}" data-location-id="{{ pa.location_id }}">
+                                Part of: {{ pa.asset_name }} ({{ pa.asset_type.name }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text text-muted">
+                            If this is a component (e.g. Cooling Fan or Bushing), select its parent equipment. It will automatically inherit the parent's bay location.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-link link-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary ms-auto">+ Save Equipment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleNewAssetType(selectEl) {
+    const box = document.getElementById('newAssetTypeBox');
+    const input = document.getElementById('newAssetTypeInput');
+    if (selectEl.value === 'new') {
+        box.style.display = 'block';
+        input.required = true;
+        input.focus();
+    } else {
+        box.style.display = 'none';
+        input.required = false;
+    }
+}
+
+function toggleParentLocation(parentSelect) {
+    const locSelect = document.getElementById('locationSelect');
+    if (parentSelect.value) {
+        locSelect.disabled = true;
+        const selectedOpt = parentSelect.options[parentSelect.selectedIndex];
+        const locId = selectedOpt.getAttribute('data-location-id');
+        if (locId) {
+            locSelect.value = locId;
+        }
+    } else {
+        locSelect.disabled = false;
+    }
+}
+</script>
 {% endblock %}

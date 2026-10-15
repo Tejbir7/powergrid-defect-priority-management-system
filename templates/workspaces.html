@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+
+{% block title %}Grid Workspaces – PowerGrid{% endblock %}
+
+{% block head %}
+<style>
+    .workspace-hero {
+        background: linear-gradient(135deg, rgba(32, 107, 196, 0.12), rgba(139, 92, 246, 0.08));
+        border: 1px solid rgba(98, 105, 118, 0.16);
+        border-radius: 1rem;
+        padding: 1.5rem;
+    }
+    .ws-card {
+        border-radius: 0.85rem;
+        overflow: hidden;
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+        border: 1px solid rgba(98, 105, 118, 0.18);
+    }
+    .ws-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+    .ws-card-banner {
+        background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
+        padding: 1.25rem 1.25rem 1rem 1.25rem;
+        color: #fff;
+        position: relative;
+    }
+    .ws-card-banner.active-banner {
+        background: linear-gradient(135deg, #206bc4 0%, #1e3a5f 100%);
+    }
+    .ws-badge-head     { background: #8b5cf6; color: #fff; }
+    .ws-badge-manager  { background: #0ea5e9; color: #fff; }
+    .ws-badge-engineer { background: #10b981; color: #fff; }
+    .ws-badge-viewer   { background: #6b7280; color: #fff; }
+    .ws-role-pill {
+        display: inline-block;
+        padding: 0.2rem 0.55rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    .ws-stat-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.82rem;
+        padding: 0.35rem 0.65rem;
+        border-radius: 0.5rem;
+        background: rgba(98, 105, 118, 0.08);
+    }
+    .copy-toast {
+        display: none;
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        z-index: 9999;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="workspace-hero mb-4">
+    <div class="row align-items-center g-3">
+        <div class="col-md-7">
+            <div class="page-pretitle text-primary fw-bold">COLLABORATIVE GRID SAAS</div>
+            <h1 class="page-title mb-1">Transmission Grid Workspaces</h1>
+            <p class="text-muted mb-0">
+                Join or manage regional grid partitions, defect ledgers, and maintenance crews.
+            </p>
+        </div>
+        <div class="col-md-5 text-md-end d-flex gap-2 justify-content-md-end flex-wrap">
+            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#joinWorkspaceModal">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                    <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5"></path>
+                    <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5"></path>
+                </svg>
+                Join with Code / Link
+            </button>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createWorkspaceModal">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                    <path d="M12 5v14M5 12h14"></path>
+                </svg>
+                Create Workspace
+            </button>
+        </div>
+    </div>
+</div>
+
+{# ── Workspaces Grid ── #}
+{% if workspaces_data %}
+<div class="row row-cards">
+    {% for item in workspaces_data %}
+    {% set ws = item.workspace %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card ws-card h-100">
+            <div class="ws-card-banner {{ 'active-banner' if item.is_active else '' }}">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="ws-role-pill ws-badge-{{ item.role }}">{{ item.role }}</span>
+                    {% if item.is_active %}
+                    <span class="badge bg-white text-primary fw-bold">ACTIVE NOW</span>
+                    {% endif %}
+                </div>
+                <h3 class="card-title text-white mb-1" style="font-size:1.15rem; font-weight:600;">
+                    {{ ws.name }}
+                </h3>
+                <div class="text-white-50 small">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                        <circle cx="12" cy="12" r="9"></circle>
+                        <polyline points="12 7 12 12 15 15"></polyline>
+                    </svg>
+                    Created {{ ws.created_at.strftime('%b %d, %Y') }}
+                </div>
+            </div>
+
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <span class="ws-stat-chip text-danger">
+                        <strong>{{ item.active_defects }}</strong> Open Defects
+                    </span>
+                    <span class="ws-stat-chip text-success">
+                        <strong>{{ item.resolved_defects }}</strong> Resolved
+                    </span>
+                    <span class="ws-stat-chip text-azure">
+                        <strong>{{ item.assets_count }}</strong> Assets
+                    </span>
+                    <span class="ws-stat-chip text-muted">
+                        <strong>{{ item.members_count }}</strong> Members
+                    </span>
+                </div>
+
+                {% if item.role in ['head', 'manager'] %}
+                <div class="p-2 mb-3 rounded bg-light border">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="text-muted small fw-semibold">Invite Code:</span>
+                        <code class="fw-bold px-1 rounded bg-white text-dark">{{ ws.invite_code }}</code>
+                    </div>
+                    <div class="d-flex gap-1 mt-2">
+                        <button type="button" class="btn btn-sm btn-outline-secondary w-100"
+                                onclick="copyInviteLink('{{ request.host_url }}join/{{ ws.invite_code }}')">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                                <rect x="8" y="8" width="12" height="12" rx="2"></rect>
+                                <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
+                            </svg>
+                            Copy Share Link
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="card-footer bg-transparent d-flex justify-content-between align-items-center border-top">
+                {% if item.is_active %}
+                <a href="{{ url_for('dashboard') }}" class="btn btn-primary w-100">
+                    Enter Workspace &rarr;
+                </a>
+                {% else %}
+                <a href="{{ url_for('workspace.select_workspace', workspace_id=ws.id) }}" class="btn btn-outline-primary w-100">
+                    Switch &amp; Enter &rarr;
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+{# ── Empty State ── #}
+<div class="card py-5">
+    <div class="empty">
+        <div class="empty-icon text-primary mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" fill="none">
+                <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+                <line x1="9" y1="9" x2="9" y2="15"></line>
+                <line x1="15" y1="9" x2="15" y2="15"></line>
+                <line x1="9" y1="12" x2="15" y2="12"></line>
+            </svg>
+        </div>
+        <p class="empty-title h3">No Grid Workspaces Found</p>
+        <p class="empty-subtitle text-muted">
+            You are not currently enrolled in any transmission grid workspaces.<br>
+            Create a new workspace for your transmission section or join an existing grid with an invite link or code.
+        </p>
+        <div class="empty-action d-flex justify-content-center gap-2 mt-3">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createWorkspaceModal">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                    <path d="M12 5v14M5 12h14"></path>
+                </svg>
+                Create Your First Workspace
+            </button>
+            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#joinWorkspaceModal">
+                Join with Invite Code
+            </button>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{# ── Create Workspace Modal ── #}
+<div class="modal fade" id="createWorkspaceModal" tabindex="-1" aria-labelledby="createWorkspaceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('workspace.create_workspace') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createWorkspaceModalLabel">Create New Grid Workspace</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label required">Workspace / Grid Sector Name</label>
+                        <input type="text" name="name" class="form-control"
+                               placeholder="e.g. POWERGRID Northern Region – Bay 400kV" required autofocus>
+                        <div class="form-text">
+                            You will automatically be designated as the <strong>Head Administrator</strong> with authority to invite engineers, log equipment, and audit defect ledgers.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-link link-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary ms-auto">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                            <path d="M5 12l5 5l10 -10"></path>
+                        </svg>
+                        Create Workspace
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ── Join Workspace Modal ── #}
+<div class="modal fade" id="joinWorkspaceModal" tabindex="-1" aria-labelledby="joinWorkspaceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('workspace.join_workspace') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="joinWorkspaceModalLabel">Join Grid Workspace</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label required">Invite Code or Shareable Link</label>
+                        <input type="text" name="invite_code" class="form-control"
+                               placeholder="e.g. pg-punjab-2026 or paste http://.../join/<code>" required autofocus>
+                        <div class="form-text">
+                            Ask your workspace Head Administrator for their 12-character invite code or share link.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-link link-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary ms-auto">Join Workspace</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{# ── Toast alert for copied link ── #}
+<div id="copyToast" class="alert alert-success shadow copy-toast" role="alert">
+    <strong>Link Copied!</strong> Workspace shareable invite link copied to clipboard.
+</div>
+
+<script>
+function copyInviteLink(url) {
+    navigator.clipboard.writeText(url).then(function() {
+        const toast = document.getElementById('copyToast');
+        toast.style.display = 'block';
+        setTimeout(function() {
+            toast.style.display = 'none';
+        }, 2500);
+    }).catch(function(err) {
+        prompt("Copy this link to share with team members:", url);
+    });
+}
+</script>
+{% endblock %}

@@ -1,9 +1,72 @@
-<header class="navbar navbar-expand-md navbar-light d-print-none border-bottom py-3">
+<header class="navbar navbar-expand-md d-print-none border-bottom py-2">
     <div class="container-fluid">
         <a class="navbar-brand d-md-none" href="{{ url_for('dashboard') }}">PowerGrid</a>
 
-        <div class="d-flex order-md-2 ms-auto align-items-center">
-            <form method="get" action="{{ url_for('search_defects') }}" class="me-3 d-none d-md-flex gap-2">
+        {# ── Active Workspace Switcher ── #}
+        <div class="navbar-nav d-none d-md-flex me-auto">
+            {% if current_workspace %}
+            <div class="nav-item dropdown">
+                <a href="#" class="nav-link dropdown-toggle text-reset d-flex align-items-center gap-2" data-bs-toggle="dropdown" aria-label="Active workspace">
+                    <span class="badge bg-primary-lt p-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm text-primary" width="18" height="18" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                            <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+                            <line x1="9" y1="9" x2="9" y2="15"></line>
+                            <line x1="15" y1="9" x2="15" y2="15"></line>
+                            <line x1="9" y1="12" x2="15" y2="12"></line>
+                        </svg>
+                    </span>
+                    <span class="fw-semibold">{{ current_workspace.name }}</span>
+                    <span class="badge badge-sm
+                        {% if current_workspace_role == 'head' %}bg-purple
+                        {% elif current_workspace_role == 'manager' %}bg-azure
+                        {% elif current_workspace_role == 'engineer' %}bg-green
+                        {% else %}bg-secondary{% endif %}">
+                        {{ current_workspace_role | title }}
+                    </span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-arrow shadow-sm">
+                    <div class="dropdown-header">Active Workspace</div>
+                    <div class="dropdown-item active d-flex justify-content-between align-items-center">
+                        <span><strong>{{ current_workspace.name }}</strong></span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                            <path d="M5 12l5 5l10 -10"></path>
+                        </svg>
+                    </div>
+
+                    {% if user_workspaces and user_workspaces|length > 1 %}
+                    <div class="dropdown-divider"></div>
+                    <div class="dropdown-header">Switch Workspace:</div>
+                    {% for ws in user_workspaces %}
+                        {% if ws.id != current_workspace.id %}
+                        <a class="dropdown-item" href="{{ url_for('workspace.select_workspace', workspace_id=ws.id) }}">
+                            {{ ws.name }}
+                        </a>
+                        {% endif %}
+                    {% endfor %}
+                    {% endif %}
+
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item text-primary fw-medium" href="{{ url_for('workspace.workspaces_hub') }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                            <path d="M4 4h6v8H4z"></path><path d="M4 16h6v4H4z"></path>
+                            <path d="M14 4h6v4h-6z"></path><path d="M14 12h6v8h-6z"></path>
+                        </svg>
+                        All Workspaces / Join Sector
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <div class="nav-item">
+                <a href="{{ url_for('workspace.workspaces_hub') }}" class="btn btn-sm btn-outline-primary">
+                    Select Grid Workspace
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="d-flex order-md-2 ms-auto align-items-center gap-2">
+            {# ── Search form ── #}
+            <form method="get" action="{{ url_for('search_defects') }}" class="d-none d-md-flex gap-2">
                 <div class="input-icon">
                     <span class="input-icon-addon">
                         <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm text-muted" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -20,43 +83,61 @@
                 </select>
             </form>
 
+            {# ── Theme Switcher Button (Universal Desktop + Mobile) ── #}
+            <div class="d-flex align-items-center">
+                <a href="javascript:void(0);" class="nav-link px-2 text-muted" onclick="toggleTheme()" title="Toggle Dark / Light Mode" aria-label="Toggle theme">
+                    {# Sun icon (visible in dark mode to switch to light) #}
+                    <svg class="icon text-yellow theme-icon-sun" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="4"></circle>
+                        <path d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7"></path>
+                    </svg>
+                    {# Moon icon (visible in light mode to switch to dark) #}
+                    <svg class="icon text-secondary theme-icon-moon" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z"></path>
+                    </svg>
+                </a>
+            </div>
+
+            {# ── User Profile Dropdown ── #}
             <div class="navbar-nav align-items-center">
                 <div class="nav-item dropdown">
                     <a class="nav-link d-flex lh-1 text-reset p-0" href="#" data-bs-toggle="dropdown" aria-label="Profile menu">
-                        <span class="avatar avatar-sm"
-                              style="background-image:url('https://ui-avatars.com/api/?name={{ current_user.username|urlencode }}&size=32&background=random');"></span>
+                        <span class="avatar avatar-sm bg-blue-lt text-uppercase fw-bold">
+                            {{ current_user.username[:2] }}
+                        </span>
                         <div class="d-none d-xl-block ps-2">
-                            <div>{{ current_user.username }}</div>
+                            <div class="fw-medium">{{ current_user.username }}</div>
                             <div class="mt-1 small text-muted">{{ current_user.email }}</div>
                         </div>
                     </a>
-                    <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                    <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow shadow-sm">
                         <div class="dropdown-item text-muted small">
                             <span class="badge
-                                {% if current_user.role == 'head' %}bg-purple
-                                {% elif current_user.role == 'manager' %}bg-azure
-                                {% elif current_user.role == 'engineer' %}bg-green
+                                {% if current_workspace_role == 'head' %}bg-purple
+                                {% elif current_workspace_role == 'manager' %}bg-azure
+                                {% elif current_workspace_role == 'engineer' %}bg-green
                                 {% else %}bg-secondary{% endif %}">
-                                {{ current_user.role | title }}
+                                {{ (current_workspace_role or current_user.role) | title }}
                             </span>
-                            &nbsp;POWERGRID
+                            &nbsp;{% if current_workspace %}{{ current_workspace.name }}{% else %}POWERGRID{% endif %}
                         </div>
                         <div class="dropdown-divider"></div>
-                        {% if current_user.role == 'head' %}
-                        <a class="dropdown-item" href="{{ url_for('admin_users') }}">Manage Users</a>
+                        <a class="dropdown-item" href="{{ url_for('workspace.workspaces_hub') }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1 text-muted" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                                <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+                                <line x1="9" y1="9" x2="9" y2="15"></line>
+                                <line x1="15" y1="9" x2="15" y2="15"></line>
+                            </svg>
+                            My Grid Workspaces
+                        </a>
+                        <a class="dropdown-item" href="{{ url_for('settings') }}">Account Settings</a>
+                        {% if current_workspace_role in ['head', 'manager'] or current_user.role == 'head' %}
+                        <a class="dropdown-item" href="{{ url_for('admin_users') }}">Manage Team Users</a>
                         {% endif %}
                         <div class="dropdown-divider"></div>
                         <a class="dropdown-item text-danger" href="{{ url_for('logout') }}">Logout</a>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <div class="navbar-nav d-none d-md-flex">
-            <div class="nav-item">
-                <span class="navbar-text text-muted">
-                    <span class="fw-medium">POWERGRID</span> Infrastructure
-                </span>
             </div>
         </div>
     </div>

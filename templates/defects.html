@@ -1,120 +1,235 @@
 {% extends "base.html" %}
 
-{% block title %}Defects - PowerGrid{% endblock %}
+{% block title %}Active Defects – PowerGrid{% endblock %}
+
+{% block head %}
+<style>
+    .defect-card-selected {
+        border-left: 4px solid #206bc4 !important;
+        background-color: rgba(32, 107, 196, 0.04);
+    }
+    .timeline-item {
+        position: relative;
+        padding-left: 1.5rem;
+        border-left: 2px solid rgba(98, 105, 118, 0.2);
+    }
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -5px;
+        top: 4px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #206bc4;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="page-header mb-4 d-print-none">
     <div class="row align-items-center">
         <div class="col">
-            <div class="page-pretitle">Defect Management</div>
-            <h2 class="page-title">Active Defects</h2>
-            <p class="text-muted mb-0">Only open and in-progress defects are shown here. Resolved defects are moved to defect history.</p>
+            <div class="page-pretitle">Operational Records</div>
+            <h2 class="page-title">Active Equipment Defects</h2>
+            <p class="text-muted mb-0">Live tracking of open and in-progress infrastructure faults with component-level traceability.</p>
         </div>
         <div class="col-auto ms-auto d-print-none">
             {% if current_user.role in ['head', 'manager', 'engineer'] %}
-            <a href="{{ url_for('add_defect') }}" class="btn btn-primary">Add Defect</a>
+            <a href="{{ url_for('add_defect') }}" class="btn btn-primary d-flex align-items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"><path d="M12 5v14M5 12h14"/></svg>
+                Add Defect
+            </a>
             {% endif %}
         </div>
     </div>
 </div>
 
-<div class="card mb-4">
+{# ── Time Range Filter Card ── #}
+<div class="card mb-4 shadow-sm">
     <div class="card-body">
         <form method="get" class="row g-3 align-items-end">
             <input type="hidden" name="q" value="{{ search_query }}">
             <div class="col-12 col-md-3">
-                <label class="form-label">Time Range</label>
+                <label class="form-label">Time Window</label>
                 <select name="range" class="form-select">
                     {% for option in ['all', 'today', '7d', '30d', 'custom'] %}
                     <option value="{{ option }}" {% if selected_range == option %}selected{% endif %}>
-                        {{ 'All time' if option == 'all' else ('Today' if option == 'today' else ('Last 7 days' if option == '7d' else ('Last 30 days' if option == '30d' else 'Custom'))) }}
+                        {{ 'All time' if option == 'all' else ('Today' if option == 'today' else ('Last 7 days' if option == '7d' else ('Last 30 days' if option == '30d' else 'Custom Range'))) }}
                     </option>
                     {% endfor %}
                 </select>
             </div>
             <div class="col-12 col-md-3">
-                <label class="form-label">Start</label>
+                <label class="form-label">From</label>
                 <input type="datetime-local" name="start" class="form-control" value="{{ filter_start }}">
             </div>
             <div class="col-12 col-md-3">
-                <label class="form-label">End</label>
+                <label class="form-label">To</label>
                 <input type="datetime-local" name="end" class="form-control" value="{{ filter_end }}">
             </div>
             <div class="col-12 col-md-3 d-flex gap-2">
-                <button type="submit" class="btn btn-primary flex-grow-1">Filter</button>
+                <button type="submit" class="btn btn-primary flex-grow-1">Apply Filter</button>
                 <a href="{{ url_for('defects') }}" class="btn btn-outline-secondary">Reset</a>
             </div>
         </form>
     </div>
 </div>
 
-<div class="card mb-4">
+{# ── Selected Defect Deep-Dive (Defect Details & Audit Ledger) ── #}
+{% if selected_defect %}
+<div class="card mb-4 shadow-sm border-primary">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-blue text-white fs-6 px-2 py-1">DFT-{{ selected_defect.id }}</span>
+            <h3 class="card-title mb-0">{{ selected_defect.asset.asset_name }}</h3>
+            <span class="badge bg-blue-lt">{{ selected_defect.asset.asset_type.name }}</span>
+            {% if selected_defect.asset.is_component %}
+            <span class="badge bg-purple-lt">↳ Component of {{ selected_defect.asset.parent_name }}</span>
+            {% endif %}
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge {% if selected_defect.priority == 'Critical' %}bg-red{% elif selected_defect.priority == 'High' %}bg-orange{% elif selected_defect.priority == 'Medium' %}bg-yellow{% else %}bg-green{% endif %}">
+                {{ selected_defect.priority }} Priority
+            </span>
+            <span class="badge {% if selected_defect.status == 'Resolved' %}bg-green{% elif selected_defect.status == 'In Progress' %}bg-azure{% else %}bg-yellow{% endif %}">
+                {{ selected_defect.status }}
+            </span>
+            <span class="badge {{ selected_defect.sla_info.tone }}">
+                {{ selected_defect.sla_info.label }}
+            </span>
+            {% if current_user.role != 'viewer' %}
+            <a href="{{ url_for('edit_defect', defect_id=selected_defect.id) }}" class="btn btn-sm btn-outline-primary ms-2">
+                Update Defect
+            </a>
+            {% endif %}
+        </div>
+    </div>
     <div class="card-body">
-        <form method="get" class="row g-3 align-items-end">
-            <input type="hidden" name="range" value="{{ selected_range }}">
-            <input type="hidden" name="start" value="{{ filter_start }}">
-            <input type="hidden" name="end" value="{{ filter_end }}">
-            <input type="hidden" name="q" value="{{ search_query }}">
-            <div class="col-12 col-md-8">
-                <label class="form-label">Select Defect</label>
-                <select name="defect_id" class="form-select" onchange="this.form.submit()">
-                    {% for defect in defects %}
-                    <option value="{{ defect.id }}" {% if selected_defect and selected_defect.id == defect.id %}selected{% endif %}>
-                        DFT-{{ defect.id }} | {{ defect.asset.asset_name }} | {{ defect.priority }} | {{ defect.status }} | {{ defect.reported_at.strftime('%Y-%m-%d %H:%M') if defect.reported_at else '-' }}
-                    </option>
+        <div class="row g-4">
+            <div class="col-12 col-lg-7">
+                <div class="mb-3">
+                    <label class="form-label text-muted small text-uppercase fw-bold">Hierarchical Physical Location</label>
+                    <div class="d-flex align-items-center flex-wrap gap-1 fs-5 text-dark fw-medium">
+                        {% for type_name, loc_name in selected_defect.asset.location.path_list %}
+                        <span class="badge bg-azure-lt">{{ type_name }}: {{ loc_name }}</span>
+                        {% if not loop.last %}
+                        <span class="text-muted">&rsaquo;</span>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label text-muted small text-uppercase fw-bold">Fault Description</label>
+                    <div class="p-3 bg-light rounded border text-body">
+                        {{ selected_defect.description }}
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-6">
+                        <label class="form-label text-muted small text-uppercase fw-bold">Assigned Engineer</label>
+                        <div>
+                            {% if selected_defect.assigned_user %}
+                            <span class="fw-semibold">{{ selected_defect.assigned_user.username }}</span>
+                            <span class="badge bg-green-lt ms-1">{{ selected_defect.assigned_user.role | title }}</span>
+                            {% else %}
+                            <span class="text-muted fst-italic">Unassigned</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label text-muted small text-uppercase fw-bold">SLA Target Date</label>
+                        <div class="fw-medium">
+                            {{ selected_defect.expected_resolution.strftime('%Y-%m-%d %H:%M') if selected_defect.expected_resolution else 'No Target Date Set' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# ── Defect Status Log (Audit Ledger) ── #}
+            <div class="col-12 col-lg-5 border-start-lg ps-lg-4">
+                <h4 class="card-title mb-3 d-flex align-items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon text-primary" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="9"/></svg>
+                    Audit Ledger &amp; Lifecycle Trail
+                </h4>
+                {% if selected_defect.status_logs %}
+                <div class="timeline" style="max-height: 240px; overflow-y: auto;">
+                    {% for log in selected_defect.status_logs %}
+                    <div class="timeline-item mb-3 pb-2">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span class="fw-medium">
+                                {% if log.old_status %}
+                                <span class="badge bg-secondary-lt">{{ log.old_status }}</span> &rarr;
+                                {% endif %}
+                                <span class="badge bg-blue-lt">{{ log.new_status }}</span>
+                            </span>
+                            <span class="text-muted small" style="font-size:0.75rem;">
+                                {{ log.changed_at.strftime('%Y-%m-%d %H:%M') }}
+                            </span>
+                        </div>
+                        <div class="small text-muted mt-1">
+                            By: <strong>{{ log.changed_by.username if log.changed_by else 'System' }}</strong>
+                            {% if log.comment %}
+                            &mdash; <em>"{{ log.comment }}"</em>
+                            {% endif %}
+                        </div>
+                    </div>
                     {% endfor %}
-                </select>
-            </div>
-            <div class="col-12 col-md-4">
-                <button type="submit" class="btn btn-primary w-100">View Details</button>
-            </div>
-        </form>
-        {% if selected_defect %}
-        <div class="row g-3 mt-3">
-            <div class="col-12 col-lg-6">
-                <div class="border rounded-3 p-3 h-100">
-                    <div class="text-muted small mb-1">Description</div>
-                    <div class="fw-medium">{{ selected_defect.asset.asset_name }} ({{ selected_defect.asset.location.name }})</div>
-                    <div class="text-muted mt-2">{{ selected_defect.description or 'No description provided.' }}</div>
                 </div>
-            </div>
-            <div class="col-12 col-lg-6">
-                <div class="border rounded-3 p-3 h-100">
-                    <div class="text-muted small mb-1">Details</div>
-                    <div>Assigned Engineer: {{ selected_defect.assigned_user.username if selected_defect.assigned_user else 'Unassigned' }}</div>
-                    <div>Expected Resolution: {{ selected_defect.expected_resolution.strftime('%Y-%m-%d %H:%M') if selected_defect.expected_resolution else '-' }}</div>
-                    <div>Reported: {{ selected_defect.reported_at.strftime('%Y-%m-%d %H:%M') if selected_defect.reported_at else '-' }}</div>
-                </div>
+                {% else %}
+                <div class="text-muted small">No lifecycle logs recorded yet.</div>
+                {% endif %}
             </div>
         </div>
-        {% endif %}
     </div>
 </div>
+{% endif %}
 
-<div class="card">
+{# ── Defects Master Table ── #}
+<div class="card shadow-sm">
+    <div class="card-header">
+        <h3 class="card-title">Defect Callset</h3>
+        <div class="card-options">
+            <span class="text-muted small">{{ defects|length }} active issue(s)</span>
+        </div>
+    </div>
     <div class="table-responsive">
-        <table class="table card-table table-vcenter text-nowrap datatable">
+        <table class="table card-table table-vcenter table-hover text-nowrap">
             <thead>
                 <tr>
-                    <th>S. No.</th>
                     <th>ID</th>
-                    <th>Asset Name</th>
-                    <th>Location</th>
+                    <th>Equipment &amp; Component</th>
+                    <th>Hierarchy / Location</th>
                     <th>Priority</th>
                     <th>Status</th>
-                    <th>Assigned Engineer</th>
-                    <th>Date Reported</th>
-                    <th>Expected Resolution</th>
-                    <th>Actions</th>
+                    <th>SLA Due Date</th>
+                    <th>Assigned To</th>
+                    <th>Reported</th>
+                    <th class="text-end">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for defect in defects %}
-                <tr>
-                    <td>{{ loop.index }}</td>
-                    <td>DFT-{{ defect.id }}</td>
-                    <td>{{ defect.asset.asset_name }}</td>
-                    <td>{{ defect.asset.location.name }}</td>
+                <tr class="{{ 'defect-card-selected' if selected_defect and selected_defect.id == defect.id else '' }}"
+                    style="cursor: pointer;"
+                    onclick="window.location='{{ url_for('defects', defect_id=defect.id, range=selected_range, q=search_query) }}';">
+                    <td class="fw-bold text-primary">DFT-{{ defect.id }}</td>
+                    <td>
+                        <div class="fw-semibold">{{ defect.asset.asset_name }}</div>
+                        <div class="text-muted small">
+                            <span class="badge bg-light text-dark">{{ defect.asset.asset_type.name }}</span>
+                            {% if defect.asset.is_component %}
+                            <span class="badge bg-purple-lt">↳ Part of {{ defect.asset.parent_name }}</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <span class="text-muted small" title="{{ defect.asset.location.full_path }}">
+                            {{ defect.asset.location.full_path }}
+                        </span>
+                    </td>
                     <td>
                         <span class="badge {% if defect.priority == 'Critical' %}bg-red{% elif defect.priority == 'High' %}bg-orange{% elif defect.priority == 'Medium' %}bg-yellow{% else %}bg-green{% endif %}">
                             {{ defect.priority }}
@@ -125,24 +240,46 @@
                             {{ defect.status }}
                         </span>
                     </td>
-                    <td>{{ defect.assigned_user.username if defect.assigned_user else 'Unassigned' }}</td>
-                    <td>{{ defect.reported_at.strftime('%Y-%m-%d %H:%M') if defect.reported_at else '-' }}</td>
-                    <td>{{ defect.expected_resolution.strftime('%Y-%m-%d %H:%M') if defect.expected_resolution else '-' }}</td>
                     <td>
-                        {% if current_user.role != 'viewer' %}
-                        <a href="{{ url_for('edit_defect', defect_id=defect.id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                        <span class="badge {{ defect.sla_info.tone }}">{{ defect.sla_info.label }}</span>
+                        <div class="text-muted small" style="font-size:0.75rem;">
+                            {{ defect.expected_resolution.strftime('%Y-%m-%d') if defect.expected_resolution else '—' }}
+                        </div>
+                    </td>
+                    <td>
+                        {% if defect.assigned_user %}
+                        <span class="fw-medium">{{ defect.assigned_user.username }}</span>
+                        {% else %}
+                        <span class="text-muted fst-italic">Unassigned</span>
                         {% endif %}
-                        {% if current_user.role in ['head', 'manager'] %}
-                        <form method="POST" action="{{ url_for('delete_defect', defect_id=defect.id) }}" class="d-inline" onsubmit="return confirm('Delete this defect?');">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                        </form>
-                        {% endif %}
+                    </td>
+                    <td class="text-muted small">
+                        {{ defect.reported_at.strftime('%Y-%m-%d %H:%M') if defect.reported_at else '-' }}
+                    </td>
+                    <td class="text-end" onclick="event.stopPropagation();">
+                        <div class="btn-group">
+                            <a href="{{ url_for('defects', defect_id=defect.id, range=selected_range, q=search_query) }}" class="btn btn-sm btn-outline-secondary" title="Inspect defect details">
+                                View
+                            </a>
+                            {% if current_user.role != 'viewer' %}
+                            <a href="{{ url_for('edit_defect', defect_id=defect.id) }}" class="btn btn-sm btn-outline-primary" title="Update status or notes">
+                                Update
+                            </a>
+                            {% endif %}
+                            {% if current_user.role in ['head', 'manager'] %}
+                            <form method="POST" action="{{ url_for('delete_defect', defect_id=defect.id) }}" class="d-inline" onsubmit="return confirm('Permanently delete defect DFT-{{ defect.id }}?');">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete defect">
+                                    Delete
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
                     </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="10" class="text-center text-muted py-4">No active defects match the selected filters.</td>
+                    <td colspan="9" class="text-center text-muted py-4">No active defects match the selected filters.</td>
                 </tr>
                 {% endfor %}
             </tbody>
