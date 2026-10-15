@@ -37,7 +37,7 @@
 <div class="dashboard-hero mb-4">
     <div class="row align-items-center g-3">
         <div class="col-12 col-lg">
-            <div class="page-pretitle">{{ current_user.corporation.name }}</div>
+            <div class="page-pretitle">POWERGRID</div>
             <h2 class="page-title mb-1">Dashboard</h2>
             <p class="page-subtitle text-muted mb-0">
                 {% if current_user.role == 'engineer' %}
@@ -91,8 +91,8 @@
                 <tr>
                     <td>DFT-{{ d.id }}</td>
                     <td>
-                        <div class="fw-medium">{{ d.asset_name }}</div>
-                        <div class="text-muted small">{{ d.location }}</div>
+                        <div class="fw-medium">{{ d.asset.asset_name }}</div>
+                        <div class="text-muted small">{{ d.asset.location.name }}</div>
                     </td>
                     <td>
                         <span class="badge {% if d.priority == 'Critical' %}bg-red{% elif d.priority == 'High' %}bg-orange{% elif d.priority == 'Medium' %}bg-yellow{% else %}bg-green{% endif %}">
@@ -142,8 +142,8 @@
                             <td>{{ loop.index }}</td>
                             <td>DFT-{{ defect.id }}</td>
                             <td>
-                                <div class="fw-medium">{{ defect.asset_name }}</div>
-                                <div class="text-muted small">{{ defect.location }}</div>
+                                <div class="fw-medium">{{ defect.asset.asset_name }}</div>
+                                <div class="text-muted small">{{ defect.asset.location.name }}</div>
                             </td>
                             <td>
                                 <span class="badge {% if defect.priority == 'Critical' %}bg-red{% elif defect.priority == 'High' %}bg-orange{% elif defect.priority == 'Medium' %}bg-yellow{% else %}bg-green{% endif %}">
@@ -155,7 +155,7 @@
                                     {{ defect.status }}
                                 </span>
                             </td>
-                            <td>{{ defect.date_reported.strftime('%Y-%m-%d %H:%M') if defect.date_reported else '-' }}</td>
+                            <td>{{ defect.reported_at.strftime('%Y-%m-%d %H:%M') if defect.reported_at else '-' }}</td>
                         </tr>
                         {% else %}
                         <tr>

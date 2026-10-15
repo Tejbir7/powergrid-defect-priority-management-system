@@ -23,9 +23,9 @@
 <div class="assets-hero mb-4">
     <div class="row align-items-center g-3">
         <div class="col-12 col-lg">
-            <div class="page-pretitle">Defect Tracking</div>
+            <div class="page-pretitle">Asset Management</div>
             <h2 class="page-title mb-1">Equipment Defect Summary</h2>
-            <p class="page-subtitle text-muted mb-0">Equipment is grouped from defect records. Total, active, and resolved counts update as defects change.</p>
+            <p class="page-subtitle text-muted mb-0">Master equipment tracked with hierarchical physical locations and real-time defect aggregation.</p>
         </div>
     </div>
 </div>
@@ -60,7 +60,15 @@
 </div>
 
 <div class="row row-deck row-cards mb-4">
-    <div class="col-12 col-sm-4">
+    <div class="col-12 col-sm-3">
+        <div class="card card-sm h-100">
+            <div class="card-body">
+                <div class="text-muted">Total Assets</div>
+                <div class="stat-card-value">{{ total_assets }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-3">
         <div class="card card-sm h-100">
             <div class="card-body">
                 <div class="text-muted">Total Defects</div>
@@ -68,7 +76,7 @@
             </div>
         </div>
     </div>
-    <div class="col-12 col-sm-4">
+    <div class="col-12 col-sm-3">
         <div class="card card-sm h-100">
             <div class="card-body">
                 <div class="text-muted">Active Defects</div>
@@ -76,7 +84,7 @@
             </div>
         </div>
     </div>
-    <div class="col-12 col-sm-4">
+    <div class="col-12 col-sm-3">
         <div class="card card-sm h-100">
             <div class="card-body">
                 <div class="text-muted">Resolved Defects</div>
@@ -92,6 +100,8 @@
             <thead>
                 <tr>
                     <th>Equipment</th>
+                    <th>Type</th>
+                    <th>Location</th>
                     <th>Total Defects</th>
                     <th>Active Defects</th>
                     <th>Resolved Defects</th>
@@ -102,16 +112,16 @@
                 {% for asset in assets %}
                 <tr>
                     <td class="fw-medium">{{ asset.asset_name }}</td>
-                    <td>
-                        {{ asset.total_defects }}
-                    </td>
+                    <td><span class="badge bg-blue-lt">{{ asset.asset_type }}</span></td>
+                    <td class="text-muted">{{ asset.location }}</td>
+                    <td>{{ asset.total_defects }}</td>
                     <td>{{ asset.active_defects }}</td>
                     <td>{{ asset.resolved_defects }}</td>
                     <td>{{ asset.last_activity.strftime('%Y-%m-%d %H:%M') if asset.last_activity else '-' }}</td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="5" class="text-center text-muted py-4">No equipment is tracked for the selected time range.</td>
+                    <td colspan="7" class="text-center text-muted py-4">No equipment found.</td>
                 </tr>
                 {% endfor %}
             </tbody>

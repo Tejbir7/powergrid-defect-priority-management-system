@@ -99,7 +99,7 @@
                 <div class="d-flex align-items-center justify-content-between w-100">
                     <h3 class="card-title mb-0">📬 Email Reminder</h3>
                     <div>
-                        {% if current_user.reminder_enabled %}
+                        {% if reminder and reminder.enabled %}
                         <span class="badge bg-green">
                             <span class="status-dot on"></span>Active
                         </span>
@@ -127,16 +127,16 @@
                     <div class="mb-4">
                         <label class="toggle-switch">
                             <input type="checkbox" name="reminder_enabled" id="reminderEnabled"
-                                   {% if current_user.reminder_enabled %}checked{% endif %}
+                                   {% if reminder and reminder.enabled %}checked{% endif %}
                                    onchange="onToggleChange(this)">
                             <span class="slider"></span>
                             <span class="fw-medium" id="toggleLabel">
-                                {% if current_user.reminder_enabled %}Reminders on{% else %}Reminders off{% endif %}
+                                {% if reminder and reminder.enabled %}Reminders on{% else %}Reminders off{% endif %}
                             </span>
                         </label>
                     </div>
 
-                    <div id="reminderConfig" {% if not current_user.reminder_enabled %}style="opacity:0.4;pointer-events:none;"{% endif %}>
+                    <div id="reminderConfig" {% if not (reminder and reminder.enabled) %}style="opacity:0.4;pointer-events:none;"{% endif %}>
 
                         {# Frequency tabs #}
                         <div class="mb-3">
@@ -144,7 +144,7 @@
                             <div class="d-flex gap-2 flex-wrap" role="group">
                                 {% for f in ['daily','weekly','monthly'] %}
                                 <button type="button"
-                                        class="freq-tab {{ 'active' if current_user.reminder_frequency == f else '' }}"
+                                        class="freq-tab {{ 'active' if (reminder and reminder.frequency == f) or (not reminder and f == 'daily') else '' }}"
                                         data-freq="{{ f }}"
                                         onclick="selectFreq('{{ f }}')">
                                     {{ f|title }}
@@ -152,17 +152,17 @@
                                 {% endfor %}
                             </div>
                             <input type="hidden" name="frequency" id="frequencyInput"
-                                   value="{{ current_user.reminder_frequency or 'daily' }}">
+                                   value="{{ reminder.frequency if reminder else 'daily' }}">
                         </div>
 
                         {# Weekly: day of week #}
-                        <div class="dynamic-section flex-column mb-3 {{ 'visible' if current_user.reminder_frequency == 'weekly' }}"
+                        <div class="dynamic-section flex-column mb-3 {{ 'visible' if reminder and reminder.frequency == 'weekly' }}"
                              id="weeklySection">
                             <label class="form-label">Day of the week</label>
                             <select name="day_of_week" class="form-select">
                                 {% for i, day in enumerate(days_of_week) %}
                                 <option value="{{ i }}"
-                                    {{ 'selected' if current_user.reminder_day_of_week == i }}>
+                                    {{ 'selected' if reminder and reminder.day_of_week == i }}>
                                     {{ day }}
                                 </option>
                                 {% endfor %}
@@ -170,13 +170,13 @@
                         </div>
 
                         {# Monthly: day of month #}
-                        <div class="dynamic-section flex-column mb-3 {{ 'visible' if current_user.reminder_frequency == 'monthly' }}"
+                        <div class="dynamic-section flex-column mb-3 {{ 'visible' if reminder and reminder.frequency == 'monthly' }}"
                              id="monthlySection">
                             <label class="form-label">Day of the month</label>
                             <select name="day_of_month" class="form-select">
                                 {% for d in days_of_month %}
                                 <option value="{{ d }}"
-                                    {{ 'selected' if current_user.reminder_day_of_month == d }}>
+                                    {{ 'selected' if reminder and reminder.day_of_month == d }}>
                                     {{ d }}{% if d == 1 %}st{% elif d == 2 %}nd{% elif d == 3 %}rd{% else %}th{% endif %}
                                 </option>
                                 {% endfor %}
@@ -187,7 +187,7 @@
                         <div class="mb-4">
                             <label class="form-label">Time</label>
                             <input type="time" name="reminder_time" class="form-control"
-                                   value="{{ '%02d:%02d' % (current_user.reminder_hour or 9, current_user.reminder_minute or 0) }}"
+                                   value="{{ '%02d:%02d' % (reminder.hour or 9, reminder.minute or 0) if reminder else '09:00' }}"
                                    style="max-width:160px;">
                             <div class="text-muted mt-1" style="font-size:0.78rem;">
                                 Your local server time. Currently {{ now.strftime('%H:%M') }}.
@@ -218,7 +218,7 @@
             </div>
             <div class="card-body">
                 <p class="text-muted mb-4" style="font-size:0.88rem;">
-                    These settings apply to the entire workspace and are required for email reminders to send.
+                    These settings apply to the entire system and are required for email reminders to send.
                     Stored securely in the database — no file editing needed.
                 </p>
 
@@ -305,7 +305,7 @@
                     </span>
                 </div>
                 <h4 class="text-yellow mb-1">Mail server not configured</h4>
-                <p class="text-muted">Contact your Head to enable email reminders for the workspace.</p>
+                <p class="text-muted">Contact your Head to enable email reminders for the system.</p>
                 {% endif %}
             </div>
         </div>

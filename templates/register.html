@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Workspace – PowerGrid</title>
+    <title>Initialize System – PowerGrid</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tabler.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tabler-themes.min.css') }}">
     <style>
@@ -32,7 +32,6 @@
         .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(32,107,196,0.4); }
         h2 { color: #f1f5f9; }
         .text-muted { color: rgba(255,255,255,0.45) !important; }
-        .section-divider { border-top: 1px solid rgba(255,255,255,0.08); margin: 1.25rem 0; }
         .section-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em;
                           color: rgba(255,255,255,0.35); }
     </style>
@@ -48,8 +47,8 @@
                 <path d="M14 4h6v4h-6z"/><path d="M14 12h6v8h-6z"/>
             </svg>
         </div>
-        <h2 class="fw-bold mb-1">Create Your Workspace</h2>
-        <p class="text-muted mb-0">Set up your corporation and become the Head.</p>
+        <h2 class="fw-bold mb-1">Initialize PowerGRID</h2>
+        <p class="text-muted mb-0">Set up the initial Head administrator account.</p>
     </div>
 
     <div class="auth-card p-4">
@@ -62,25 +61,17 @@
         <form method="POST">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-            <div class="section-label mb-2">Corporation</div>
-            <div class="mb-3">
-                <label class="form-label">Corporation / Workspace Name</label>
-                <input id="corp_name" type="text" name="corp_name" class="form-control"
-                       placeholder="e.g. Acme Power Corp" required autofocus>
-            </div>
-
-            <div class="section-divider"></div>
-            <div class="section-label mb-2">Head Admin Account</div>
+            <div class="section-label mb-3">Head Administrator Setup</div>
 
             <div class="mb-3">
-                <label class="form-label">Full Name / Username</label>
+                <label class="form-label">Username</label>
                 <input id="username" type="text" name="username" class="form-control"
-                       placeholder="Your name" required>
+                       placeholder="e.g. admin" required autofocus>
             </div>
             <div class="mb-3">
                 <label class="form-label">Email address</label>
                 <input id="email" type="email" name="email" class="form-control"
-                       placeholder="admin@company.com" required>
+                       placeholder="admin@powergrid.in" required>
             </div>
             <div class="row g-2 mb-4">
                 <div class="col-6">
@@ -96,13 +87,13 @@
             </div>
 
             <button type="submit" class="btn btn-primary w-100 fw-semibold">
-                Create Workspace &amp; Sign in
+                Initialize System &amp; Sign in
             </button>
         </form>
     </div>
 
     <p class="text-center mt-3 text-muted" style="font-size:0.85rem;">
-        Already have a workspace?
+        Already initialized?
         <a href="{{ url_for('login') }}" style="color:#60a5fa;">Sign in</a>
     </p>
 </div>

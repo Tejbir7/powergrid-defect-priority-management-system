@@ -60,7 +60,7 @@
                 <select name="defect_id" class="form-select" onchange="this.form.submit()">
                     {% for defect in defects %}
                     <option value="{{ defect.id }}" {% if selected_defect and selected_defect.id == defect.id %}selected{% endif %}>
-                        DFT-{{ defect.id }} | {{ defect.asset_name }} | {{ defect.priority }} | {{ defect.status }} | {{ defect.date_reported.strftime('%Y-%m-%d %H:%M') if defect.date_reported else '-' }}
+                        DFT-{{ defect.id }} | {{ defect.asset.asset_name }} | {{ defect.priority }} | {{ defect.status }} | {{ defect.reported_at.strftime('%Y-%m-%d %H:%M') if defect.reported_at else '-' }}
                     </option>
                     {% endfor %}
                 </select>
@@ -74,16 +74,16 @@
             <div class="col-12 col-lg-6">
                 <div class="border rounded-3 p-3 h-100">
                     <div class="text-muted small mb-1">Description</div>
-                    <div class="fw-medium">{{ selected_defect.asset_name }}</div>
+                    <div class="fw-medium">{{ selected_defect.asset.asset_name }} ({{ selected_defect.asset.location.name }})</div>
                     <div class="text-muted mt-2">{{ selected_defect.description or 'No description provided.' }}</div>
                 </div>
             </div>
             <div class="col-12 col-lg-6">
                 <div class="border rounded-3 p-3 h-100">
                     <div class="text-muted small mb-1">Details</div>
-                    <div>Assigned Engineer: {{ selected_defect.assigned_engineer or 'Unassigned' }}</div>
+                    <div>Assigned Engineer: {{ selected_defect.assigned_user.username if selected_defect.assigned_user else 'Unassigned' }}</div>
                     <div>Expected Resolution: {{ selected_defect.expected_resolution.strftime('%Y-%m-%d %H:%M') if selected_defect.expected_resolution else '-' }}</div>
-                    <div>Reported: {{ selected_defect.date_reported.strftime('%Y-%m-%d %H:%M') if selected_defect.date_reported else '-' }}</div>
+                    <div>Reported: {{ selected_defect.reported_at.strftime('%Y-%m-%d %H:%M') if selected_defect.reported_at else '-' }}</div>
                 </div>
             </div>
         </div>
@@ -113,8 +113,8 @@
                 <tr>
                     <td>{{ loop.index }}</td>
                     <td>DFT-{{ defect.id }}</td>
-                    <td>{{ defect.asset_name }}</td>
-                    <td>{{ defect.location }}</td>
+                    <td>{{ defect.asset.asset_name }}</td>
+                    <td>{{ defect.asset.location.name }}</td>
                     <td>
                         <span class="badge {% if defect.priority == 'Critical' %}bg-red{% elif defect.priority == 'High' %}bg-orange{% elif defect.priority == 'Medium' %}bg-yellow{% else %}bg-green{% endif %}">
                             {{ defect.priority }}
@@ -125,8 +125,8 @@
                             {{ defect.status }}
                         </span>
                     </td>
-                    <td>{{ defect.assigned_engineer or 'Unassigned' }}</td>
-                    <td>{{ defect.date_reported.strftime('%Y-%m-%d %H:%M') if defect.date_reported else '-' }}</td>
+                    <td>{{ defect.assigned_user.username if defect.assigned_user else 'Unassigned' }}</td>
+                    <td>{{ defect.reported_at.strftime('%Y-%m-%d %H:%M') if defect.reported_at else '-' }}</td>
                     <td>{{ defect.expected_resolution.strftime('%Y-%m-%d %H:%M') if defect.expected_resolution else '-' }}</td>
                     <td>
                         {% if current_user.role != 'viewer' %}

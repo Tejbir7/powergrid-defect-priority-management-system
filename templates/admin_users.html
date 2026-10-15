@@ -10,18 +10,6 @@
         border-radius: 1rem;
         padding: 1.25rem;
     }
-    .invite-box {
-        background: rgba(32,107,196,0.06);
-        border: 1px solid rgba(32,107,196,0.18);
-        border-radius: 0.75rem;
-        padding: 1rem 1.25rem;
-    }
-    .invite-link {
-        font-family: monospace;
-        font-size: 0.82rem;
-        word-break: break-all;
-        color: #60a5fa;
-    }
     .role-badge-head     { background: #6366f1; color: #fff; }
     .role-badge-manager  { background: #0ea5e9; color: #fff; }
     .role-badge-engineer { background: #10b981; color: #fff; }
@@ -38,35 +26,7 @@
         <div class="col">
             <div class="page-pretitle">Administration</div>
             <h2 class="page-title mb-1">Manage Users</h2>
-            <p class="page-subtitle text-muted mb-0">{{ corp.name }} workspace &mdash; {{ users|length }} member(s)</p>
-        </div>
-    </div>
-</div>
-
-{# ── Invite Link ── #}
-<div class="card mb-4">
-    <div class="card-header">
-        <h3 class="card-title">Invite Link</h3>
-    </div>
-    <div class="card-body">
-        <div class="invite-box mb-3">
-            <div class="text-muted small mb-1">Share this link with your team members:</div>
-            <div class="invite-link" id="inviteLink">{{ invite_link }}</div>
-        </div>
-        <div class="d-flex gap-2 flex-wrap">
-            <button class="btn btn-sm btn-outline-primary" onclick="copyInvite()">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1" viewBox="0 0 24 24"
-                     stroke-width="2" stroke="currentColor" fill="none">
-                    <path d="M8 8m0 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2z"/>
-                    <path d="M16 8v-2a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>
-                </svg>
-                Copy Link
-            </button>
-            <form method="POST" action="{{ url_for('regenerate_invite') }}"
-                  onsubmit="return confirm('Regenerate invite code? The old link will stop working.');">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <button type="submit" class="btn btn-sm btn-outline-secondary">Regenerate Code</button>
-            </form>
+            <p class="page-subtitle text-muted mb-0">POWERGRID System &mdash; {{ users|length }} team member(s)</p>
         </div>
     </div>
 </div>
@@ -161,19 +121,4 @@
         </table>
     </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-function copyInvite() {
-    const link = document.getElementById('inviteLink').textContent.trim();
-    navigator.clipboard.writeText(link).then(() => {
-        const btn = document.querySelector('[onclick="copyInvite()"]');
-        const orig = btn.innerHTML;
-        btn.textContent = '✓ Copied!';
-        btn.classList.replace('btn-outline-primary', 'btn-success');
-        setTimeout(() => { btn.innerHTML = orig; btn.classList.replace('btn-success','btn-outline-primary'); }, 2000);
-    });
-}
-</script>
 {% endblock %}

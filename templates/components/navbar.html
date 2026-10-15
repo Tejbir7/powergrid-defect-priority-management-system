@@ -39,7 +39,7 @@
                                 {% else %}bg-secondary{% endif %}">
                                 {{ current_user.role | title }}
                             </span>
-                            &nbsp;{{ current_user.corporation.name }}
+                            &nbsp;POWERGRID
                         </div>
                         <div class="dropdown-divider"></div>
                         {% if current_user.role == 'head' %}
@@ -55,7 +55,7 @@
         <div class="navbar-nav d-none d-md-flex">
             <div class="nav-item">
                 <span class="navbar-text text-muted">
-                    <span class="fw-medium">{{ current_user.corporation.name }}</span> Workspace
+                    <span class="fw-medium">POWERGRID</span> Infrastructure
                 </span>
             </div>
         </div>

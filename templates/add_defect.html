@@ -28,20 +28,31 @@
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="row g-3">
 
-                        {# Asset Name #}
+                        {# Asset Selection #}
                         <div class="col-md-6">
-                            <label class="form-label">Asset Name</label>
-                            <input type="text" name="asset_name" class="form-control"
-                                   value="{{ defect.asset_name if defect else '' }}"
-                                   {{ 'readonly' if engineer_restricted else 'required' }}>
+                            <label class="form-label">Equipment / Asset</label>
+                            {% if engineer_restricted %}
+                            <input type="text" class="form-control" value="{{ defect.asset.asset_name if defect and defect.asset else '' }}" readonly>
+                            <input type="hidden" name="asset_id" value="{{ defect.asset_id if defect else '' }}">
+                            {% else %}
+                            <select name="asset_id" id="assetSelect" class="form-select" required onchange="onAssetChange()">
+                                <option value="">— Select Equipment —</option>
+                                {% for a in assets %}
+                                <option value="{{ a.id }}" data-location="{{ a.location.name if a.location else 'Site' }}"
+                                    {% if defect and defect.asset_id == a.id %}selected{% endif %}>
+                                    {{ a.asset_name }} ({{ a.asset_type.name }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            {% endif %}
                         </div>
 
-                        {# Location #}
+                        {# Location (Derived automatically from Asset in 3NF) #}
                         <div class="col-md-6">
-                            <label class="form-label">Location</label>
-                            <input type="text" name="location" class="form-control"
-                                   value="{{ defect.location if defect else '' }}"
-                                   {{ 'readonly' if engineer_restricted else 'required' }}>
+                            <label class="form-label">Location <span class="text-muted">(derived from asset)</span></label>
+                            <input type="text" id="assetLocation" class="form-control bg-light"
+                                   value="{{ defect.asset.location.name if defect and defect.asset and defect.asset.location else '' }}"
+                                   placeholder="Select an asset to view location" readonly>
                         </div>
 
                         {# Priority — hidden for engineers #}
@@ -76,7 +87,8 @@
                         {# Description #}
                         <div class="col-12">
                             <label class="form-label">Description</label>
-                            <textarea name="description" class="form-control" rows="3"
+                            <textarea name="description" class="form-control" rows="3" required
+                                      placeholder="Detailed description of the observed defect..."
                                       {{ 'readonly' if engineer_restricted }}>{{ defect.description if defect else '' }}</textarea>
                         </div>
 
@@ -165,4 +177,18 @@
     </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function onAssetChange() {
+    const select = document.getElementById('assetSelect');
+    const locationInput = document.getElementById('assetLocation');
+    if (!select || !locationInput) return;
+    const selectedOption = select.options[select.selectedIndex];
+    const loc = selectedOption.getAttribute('data-location') || '';
+    locationInput.value = loc;
+}
+document.addEventListener('DOMContentLoaded', onAssetChange);
+</script>
 {% endblock %}
