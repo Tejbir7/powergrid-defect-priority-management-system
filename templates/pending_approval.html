@@ -5,34 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pending Approval – PowerGrid</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tabler.min.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/tabler-themes.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/powergrid.css') }}">
     <style>
-        body { background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%); min-height:100vh; }
-        .card {
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.10);
-            border-radius: 1rem;
-            backdrop-filter: blur(12px);
-        }
         .icon-circle {
-            width: 5rem; height: 5rem;
-            background: rgba(250,204,21,0.12);
-            border: 2px solid rgba(250,204,21,0.3);
-            border-radius: 50%;
+            width: 4.5rem; height: 4.5rem; border-radius: 18px;
             display: flex; align-items: center; justify-content: center;
-            margin: 0 auto 1.5rem;
+            margin: 0 auto 1.25rem;
         }
-        h2 { color: #f1f5f9; }
-        p { color: rgba(255,255,255,0.55); }
-        .btn-outline-secondary { border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.6); }
     </style>
 </head>
-<body class="antialiased d-flex align-items-center justify-content-center" style="min-height:100vh;">
+<body class="pg-auth antialiased d-flex align-items-center justify-content-center" style="min-height:100vh;">
 <div class="container" style="max-width:420px;">
     <div class="card p-5 text-center">
         <div class="icon-circle">
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"
-                 stroke-width="2" stroke="#facc15" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                 stroke-width="2" stroke="#fff" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="9"/>
                 <path d="M12 8v4"/><path d="M12 16h.01"/>
             </svg>
@@ -40,14 +27,14 @@
 
         <h2 class="fw-bold mb-2">Approval Pending</h2>
         <p class="mb-1">
-            Hi <strong style="color:#e2e8f0;">{{ current_user.username }}</strong>,
+            Hi <strong>{{ current_user.username }}</strong>,
             your account is awaiting approval.
         </p>
         <p class="mb-4">
             The Head administrator needs to approve your account before you can access the system.
         </p>
 
-        <div class="alert" style="background:rgba(250,204,21,0.08);border:1px solid rgba(250,204,21,0.2);color:rgba(255,255,255,0.65);border-radius:0.6rem;">
+        <div class="alert alert-warning">
             Please contact your Head or check back later.
         </div>
 

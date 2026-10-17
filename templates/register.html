@@ -6,105 +6,25 @@
     <meta name="color-scheme" content="dark light">
     <title>Create Account – PowerGrid Central</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tabler.min.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/tabler-themes.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/powergrid.css') }}">
     <style>
-        body {
-            background: linear-gradient(135deg, #090e17 0%, #0f1e36 50%, #172a45 100%);
-            min-height: 100vh;
-            color: #e2e8f0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-        }
-        .auth-container {
-            max-width: 460px;
-            width: 100%;
-        }
-        .auth-card {
-            background: rgba(15, 23, 42, 0.75);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 1.15rem;
-            backdrop-filter: blur(16px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-        }
+        .auth-container { max-width: 460px; width: 100%; }
         .brand-icon-box {
-            width: 3.5rem; height: 3.5rem;
-            background: linear-gradient(135deg, #206bc4, #10b981);
-            border-radius: 0.85rem;
+            width: 3.25rem; height: 3.25rem; border-radius: 14px;
             display: inline-flex; align-items: center; justify-content: center;
-            box-shadow: 0 8px 20px rgba(32, 107, 196, 0.35);
-        }
-        .nav-tabs-auth {
-            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-            gap: 0.5rem;
-        }
-        .nav-tabs-auth .nav-link {
-            border: none;
-            border-bottom: 2px solid transparent;
-            color: rgba(255, 255, 255, 0.55);
-            font-weight: 600;
-            font-size: 0.92rem;
-            padding: 0.65rem 1rem;
-            transition: all 0.2s ease;
-        }
-        .nav-tabs-auth .nav-link:hover {
-            color: #fff;
-        }
-        .nav-tabs-auth .nav-link.active {
-            background: transparent;
-            color: #60a5fa;
-            border-bottom: 2px solid #60a5fa;
-        }
-        .form-control {
-            background: rgba(255, 255, 255, 0.05) !important;
-            border: 1px solid rgba(255, 255, 255, 0.15) !important;
-            color: #f1f5f9 !important;
-            border-radius: 0.5rem;
-        }
-        .form-control::placeholder { color: rgba(255, 255, 255, 0.35) !important; }
-        .form-control:focus {
-            background: rgba(255, 255, 255, 0.08) !important;
-            border-color: #3b82f6 !important;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25) !important;
-        }
-        .form-label {
-            color: rgba(255, 255, 255, 0.75);
-            font-size: 0.83rem;
-            font-weight: 500;
-        }
-        .btn-auth-primary {
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
-            border: none;
-            color: #fff;
-            padding: 0.65rem 1.25rem;
-            border-radius: 0.55rem;
-            font-weight: 600;
-            transition: all 0.18s ease;
-        }
-        .btn-auth-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 18px rgba(37, 99, 235, 0.4);
-            color: #fff;
-        }
-        .invite-pill-banner {
-            background: rgba(59, 130, 246, 0.15);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            border-radius: 0.65rem;
-            padding: 0.75rem 1rem;
         }
     </style>
 </head>
-<body class="antialiased d-flex align-items-center justify-content-center p-3">
+<body class="pg-auth antialiased d-flex align-items-center justify-content-center p-3">
 <div class="auth-container">
 
     {# ── Branding Header ── #}
     <div class="text-center mb-4">
         <div class="brand-icon-box mb-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24"
-                 stroke-width="2" stroke="#fff" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M7 2v11h3v9l7-12h-4l4-8z"/>
-            </svg>
+            {% include "components/logo.html" %}
         </div>
-        <h2 class="fw-bold text-white mb-0" style="letter-spacing: -0.02em;">PowerGrid Central</h2>
-        <p class="small" style="color: rgba(255,255,255,0.55);">Join or create collaborative grid workspaces</p>
+        <h2 class="fw-bold mb-0" style="letter-spacing: -0.04em;">PowerGrid</h2>
+        <p class="small pg-quiet">Create an account for a grid workspace</p>
     </div>
 
     {# ── Invitation Banner if join code is active ── #}
@@ -115,7 +35,7 @@
             <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5"></path>
         </svg>
         <div class="small">
-            Invited to join: <strong class="text-white">{{ joining_workspace.name }}</strong>
+            Invited to join: <strong>{{ joining_workspace.name }}</strong>
         </div>
     </div>
     {% endif %}
@@ -182,9 +102,9 @@
             </button>
         </form>
 
-        <div class="text-center mt-4 pt-3 border-top" style="border-color: rgba(255,255,255,0.1) !important;">
-            <span style="font-size:0.85rem; color: rgba(255,255,255,0.5);">Already have an account?</span>
-            <a href="{{ url_for('login', join=join_code if join_code else None) }}" class="ms-1 fw-semibold" style="color: #60a5fa; font-size: 0.85rem; text-decoration: none;">
+        <div class="text-center mt-4 pt-3 border-top">
+            <span class="pg-quiet" style="font-size:0.85rem;">Already have an account?</span>
+            <a href="{{ url_for('login', join=join_code if join_code else None) }}" class="ms-1 pg-auth-link" style="font-size: 0.85rem;">
                 Sign in here &rarr;
             </a>
         </div>
