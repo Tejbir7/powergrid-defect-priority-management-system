@@ -1,0 +1,26 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY app.py config.py extensions.py gunicorn.conf.py ./
+COPY routes routes
+COPY models models
+COPY services services
+COPY utils utils
+COPY cli cli
+COPY templates templates
+
+RUN useradd --create-home --uid 1000 powergrid \
+    && chown -R powergrid:powergrid /app
+USER powergrid
+
+EXPOSE 5000
+
+CMD ["gunicorn", "--config", "gunicorn.conf.py", "app:app"]

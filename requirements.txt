@@ -9,3 +9,4 @@ PyMySQL
 python-dotenv
 cryptography
 pytest
+gunicorn
