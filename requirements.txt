@@ -8,3 +8,4 @@ APScheduler
 PyMySQL
 python-dotenv
 cryptography
+pytest

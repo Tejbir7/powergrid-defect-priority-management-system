@@ -16,13 +16,16 @@ class Config:
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # Production-ready database connection pool configuration
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        "pool_size": int(os.getenv("DB_POOL_SIZE", 20)),
-        "max_overflow": int(os.getenv("DB_MAX_OVERFLOW", 10)),
-        "pool_recycle": int(os.getenv("DB_POOL_RECYCLE", 1800)),
-        "pool_pre_ping": True,
-    }
+    # SQLite (used by the test suite) does not accept MySQL pool settings.
+    if (SQLALCHEMY_DATABASE_URI or "").startswith("sqlite"):
+        SQLALCHEMY_ENGINE_OPTIONS = {"connect_args": {"check_same_thread": False}}
+    else:
+        SQLALCHEMY_ENGINE_OPTIONS = {
+            "pool_size": int(os.getenv("DB_POOL_SIZE", 20)),
+            "max_overflow": int(os.getenv("DB_MAX_OVERFLOW", 10)),
+            "pool_recycle": int(os.getenv("DB_POOL_RECYCLE", 1800)),
+            "pool_pre_ping": True,
+        }
 
     # Mail configuration defaults
     MAIL_SERVER = os.getenv("MAIL_SERVER", "smtp.gmail.com")
