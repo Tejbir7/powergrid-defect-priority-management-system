@@ -1,0 +1,12 @@
+Flask
+Flask-SQLAlchemy
+Flask-WTF
+Flask-Login
+Flask-Bcrypt
+Flask-Mail
+APScheduler
+PyMySQL
+python-dotenv
+cryptography
+pytest
+gunicorn

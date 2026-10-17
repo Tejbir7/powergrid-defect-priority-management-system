@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark light">
+    <title>PowerGrid Central – Sign In or Register</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tabler.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/powergrid.css') }}">
+    <style>
+        .auth-container { max-width: 440px; width: 100%; }
+        .brand-icon-box {
+            width: 3.25rem; height: 3.25rem; border-radius: 14px;
+            display: inline-flex; align-items: center; justify-content: center;
+        }
+    </style>
+</head>
+<body class="pg-auth antialiased d-flex align-items-center justify-content-center p-3">
+<div class="auth-container">
+
+    {# ── Branding Header ── #}
+    <div class="text-center mb-4">
+        <div class="brand-icon-box mb-2">
+            {% include "components/logo.html" %}
+        </div>
+        <h2 class="fw-bold mb-0" style="letter-spacing: -0.04em;">PowerGrid</h2>
+        <p class="small pg-quiet">Transmission defect and priority desk</p>
+    </div>
+
+    {# ── Invitation Banner if join code is active ── #}
+    {% if joining_workspace %}
+    <div class="invite-pill-banner mb-3 d-flex align-items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="text-info flex-shrink-0" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+            <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5"></path>
+            <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5"></path>
+        </svg>
+        <div class="small">
+            Invited to join: <strong>{{ joining_workspace.name }}</strong>
+        </div>
+    </div>
+    {% endif %}
+
+    {# ── Auth Box ── #}
+    <div class="auth-card p-4">
+
+        {# ── Dual Tab Header: Sign In vs Create Account ── #}
+        <ul class="nav nav-tabs-auth mb-4 justify-content-center">
+            <li class="nav-item">
+                <a class="nav-link active" href="{{ url_for('login', join=join_code if join_code else None) }}">
+                    Sign In
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('register', join=join_code if join_code else None) }}">
+                    Create Account
+                </a>
+            </li>
+        </ul>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ 'danger' if category == 'danger' else ('warning' if category == 'warning' else ('success' if category == 'success' else 'info')) }} py-2 mb-3 small" style="border-radius: 0.5rem;">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endwith %}
+
+        {# ── Sign In Form ── #}
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% if join_code %}
+            <input type="hidden" name="join" value="{{ join_code }}">
+            {% endif %}
+
+            <div class="mb-3">
+                <label class="form-label" for="email">Email address</label>
+                <input id="email" type="email" name="email" class="form-control"
+                       placeholder="engineer@powergrid.in" required autofocus>
+            </div>
+
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label class="form-label mb-0" for="password">Password</label>
+                    <a href="{{ url_for('auth.forgot_password') }}" class="pg-auth-link" style="font-size:0.8rem;">
+                        Forgot password?
+                    </a>
+                </div>
+                <input id="password" type="password" name="password" class="form-control"
+                       placeholder="••••••••" required>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-check mb-0">
+                    <input type="checkbox" name="remember" class="form-check-input">
+                    <span class="form-check-label" style="font-size:0.84rem;">Remember me on this workstation</span>
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-auth-primary w-100">
+                Sign In to Platform
+            </button>
+        </form>
+
+        <div class="text-center mt-4 pt-3 border-top">
+            <span class="pg-quiet" style="font-size:0.85rem;">New to PowerGrid?</span>
+            <a href="{{ url_for('register', join=join_code if join_code else None) }}" class="ms-1 pg-auth-link" style="font-size: 0.85rem;">
+                Create new account &rarr;
+            </a>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/tabler.min.js') }}"></script>
+</body>
+</html>

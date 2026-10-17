@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="PowerGrid Maintenance Defect Tracking & Priority Management System">
+    <title>{% block title %}PowerGrid Maintenance Defect Tracking & Priority Management System{% endblock %}</title>
+
+    {# ── Anti-flash: apply saved theme BEFORE any CSS renders ── #}
+    <script>
+        (function(){
+            var t = localStorage.getItem('tabler-theme') || localStorage.getItem('powergrid-theme') || 'light';
+            document.documentElement.setAttribute('data-bs-theme', t);
+        })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tabler.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tabler-flags.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tabler-payments.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tabler-socials.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tabler-themes.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/powergrid.css') }}">
+
+    {% block head %}{% endblock %}
+</head>
+
+<body class="antialiased">
+    <div class="page">
+        {% include 'components/sidebar.html' %}
+
+        <div class="page-wrapper">
+            {% include 'components/navbar.html' %}
+
+            <div class="page-body">
+                <div class="container-xl px-4 py-4">
+                    {# ── Flash Messages ── #}
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% for category, message in messages %}
+                    {% if category == 'reminder' %}
+                    <div class="alert alert-warning mb-3 d-flex align-items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon flex-shrink-0" viewBox="0 0 24 24"
+                             stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 17v-5a6 6 0 0 1 12 0v5"/><path d="M10 21h4"/>
+                            <circle cx="12" cy="4" r="1"/>
+                        </svg>
+                        <span>{{ message }}
+                            <a href="{{ url_for('defects') }}" class="alert-link ms-1 text-decoration-underline">View defects →</a>
+                        </span>
+                    </div>
+                    {% elif category == 'success' %}
+                    <div class="alert alert-success alert-dismissible mb-3" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% elif category == 'danger' %}
+                    <div class="alert alert-danger alert-dismissible mb-3" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% elif category == 'warning' %}
+                    <div class="alert alert-warning alert-dismissible mb-3" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info alert-dismissible mb-3" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                    {% endwith %}
+
+                    {% block content %}{% endblock %}
+                </div>
+            </div>
+
+            <footer class="footer footer-transparent d-print-none">
+                <div class="container-xl">
+                    <div class="row align-items-center">
+                        <div class="col text-center">
+                            <p class="mb-0 text-muted">© PowerGrid Management System</p>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/tabler.min.js') }}"></script>
+    <script>
+        function getSavedTheme() {
+            return localStorage.getItem('tabler-theme') || localStorage.getItem('powergrid-theme') || 'light';
+        }
+
+        function setTheme(theme) {
+            const root = document.documentElement;
+            root.setAttribute('data-bs-theme', theme);
+            if (document.body) {
+                document.body.setAttribute('data-bs-theme', theme);
+            }
+            localStorage.setItem('tabler-theme', theme);
+            localStorage.setItem('powergrid-theme', theme);
+            updateThemeUI(theme);
+        }
+
+        function toggleTheme() {
+            const current = getSavedTheme();
+            const target = current === 'dark' ? 'light' : 'dark';
+            setTheme(target);
+        }
+
+        function updateThemeUI(theme) {
+            document.querySelectorAll('.theme-icon-sun').forEach(function(el) {
+                el.style.display = (theme === 'dark') ? 'inline-block' : 'none';
+            });
+            document.querySelectorAll('.theme-icon-moon').forEach(function(el) {
+                el.style.display = (theme === 'dark') ? 'none' : 'inline-block';
+            });
+            document.querySelectorAll('.theme-status-badge').forEach(function(el) {
+                el.className = (theme === 'dark') ? 'badge bg-purple-lt theme-status-badge' : 'badge bg-yellow-lt theme-status-badge';
+                el.textContent = (theme === 'dark') ? 'Dark Active' : 'Light Active';
+            });
+            document.querySelectorAll('.theme-toggle-text').forEach(function(el) {
+                el.textContent = (theme === 'dark') ? 'Light Mode' : 'Dark Mode';
+            });
+            document.querySelectorAll('#themeToggle, .theme-toggle-btn').forEach(function(btn) {
+                if (theme === 'dark') {
+                    btn.className = 'btn btn-outline-warning btn-sm';
+                    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm text-yellow me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"><circle cx="12" cy="12" r="4"></circle><path d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7"></path></svg> Switch to Light Mode';
+                } else {
+                    btn.className = 'btn btn-outline-secondary btn-sm';
+                    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm text-azure me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none"><path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z"></path></svg> Switch to Dark Mode';
+                }
+            });
+        }
+
+        // Initialize immediately and after DOM ready
+        (function() {
+            var active = getSavedTheme();
+            setTheme(active);
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    updateThemeUI(active);
+                });
+            } else {
+                updateThemeUI(active);
+            }
+        })();
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pending Approval – PowerGrid</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tabler.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/powergrid.css') }}">
+    <style>
+        .icon-circle {
+            width: 4.5rem; height: 4.5rem; border-radius: 18px;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1.25rem;
+        }
+    </style>
+</head>
+<body class="pg-auth antialiased d-flex align-items-center justify-content-center" style="min-height:100vh;">
+<div class="container" style="max-width:420px;">
+    <div class="card p-5 text-center">
+        <div class="icon-circle">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"
+                 stroke-width="2" stroke="#fff" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"/>
+                <path d="M12 8v4"/><path d="M12 16h.01"/>
+            </svg>
+        </div>
+
+        <h2 class="fw-bold mb-2">Approval Pending</h2>
+        <p class="mb-1">
+            Hi <strong>{{ current_user.username }}</strong>,
+            your account is awaiting approval.
+        </p>
+        <p class="mb-4">
+            The Head administrator needs to approve your account before you can access the system.
+        </p>
+
+        <div class="alert alert-warning">
+            Please contact your Head or check back later.
+        </div>
+
+        <a href="{{ url_for('logout') }}" class="btn btn-outline-secondary mt-3 w-100">
+            Sign out
+        </a>
+    </div>
+</div>
+<script src="{{ url_for('static', filename='js/tabler.min.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark light">
+    <title>Create Account – PowerGrid Central</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tabler.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/powergrid.css') }}">
+    <style>
+        .auth-container { max-width: 460px; width: 100%; }
+        .brand-icon-box {
+            width: 3.25rem; height: 3.25rem; border-radius: 14px;
+            display: inline-flex; align-items: center; justify-content: center;
+        }
+    </style>
+</head>
+<body class="pg-auth antialiased d-flex align-items-center justify-content-center p-3">
+<div class="auth-container">
+
+    {# ── Branding Header ── #}
+    <div class="text-center mb-4">
+        <div class="brand-icon-box mb-2">
+            {% include "components/logo.html" %}
+        </div>
+        <h2 class="fw-bold mb-0" style="letter-spacing: -0.04em;">PowerGrid</h2>
+        <p class="small pg-quiet">Create an account for a grid workspace</p>
+    </div>
+
+    {# ── Invitation Banner if join code is active ── #}
+    {% if joining_workspace %}
+    <div class="invite-pill-banner mb-3 d-flex align-items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="text-info flex-shrink-0" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+            <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5"></path>
+            <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5"></path>
+        </svg>
+        <div class="small">
+            Invited to join: <strong>{{ joining_workspace.name }}</strong>
+        </div>
+    </div>
+    {% endif %}
+
+    {# ── Auth Box ── #}
+    <div class="auth-card p-4">
+
+        {# ── Dual Tab Header: Sign In vs Create Account ── #}
+        <ul class="nav nav-tabs-auth mb-4 justify-content-center">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('login', join=join_code if join_code else None) }}">
+                    Sign In
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="{{ url_for('register', join=join_code if join_code else None) }}">
+                    Create Account
+                </a>
+            </li>
+        </ul>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ 'danger' if category == 'danger' else ('warning' if category == 'warning' else ('success' if category == 'success' else 'info')) }} py-2 mb-3 small" style="border-radius: 0.5rem;">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endwith %}
+
+        {# ── Register Form ── #}
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% if join_code %}
+            <input type="hidden" name="join" value="{{ join_code }}">
+            {% endif %}
+
+            <div class="mb-3">
+                <label class="form-label" for="username">User Name / Call Sign</label>
+                <input id="username" type="text" name="username" class="form-control"
+                       placeholder="e.g. jdoe_substation" required autofocus>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="email">Work Email address</label>
+                <input id="email" type="email" name="email" class="form-control"
+                       placeholder="engineer@powergrid.in" required>
+            </div>
+
+            <div class="row g-2 mb-4">
+                <div class="col-6">
+                    <label class="form-label" for="password">Password</label>
+                    <input id="password" type="password" name="password" class="form-control"
+                           placeholder="Min 6 chars" required>
+                </div>
+                <div class="col-6">
+                    <label class="form-label" for="confirm_password">Confirm Password</label>
+                    <input id="confirm_password" type="password" name="confirm_password" class="form-control"
+                           placeholder="Repeat" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-auth-primary w-100">
+                {% if joining_workspace %}Create Account &amp; Join Workspace{% else %}Register &amp; Open Workspaces Hub{% endif %}
+            </button>
+        </form>
+
+        <div class="text-center mt-4 pt-3 border-top">
+            <span class="pg-quiet" style="font-size:0.85rem;">Already have an account?</span>
+            <a href="{{ url_for('login', join=join_code if join_code else None) }}" class="ms-1 pg-auth-link" style="font-size: 0.85rem;">
+                Sign in here &rarr;
+            </a>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/tabler.min.js') }}"></script>
+</body>
+</html>

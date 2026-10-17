@@ -1,0 +1,13 @@
+.git
+env
+.venv
+venv
+__pycache__
+*.pyc
+.pytest_cache
+.cursor
+tests
+*.md
+dashboard_ui.png
+fix.png
+power_grid.png

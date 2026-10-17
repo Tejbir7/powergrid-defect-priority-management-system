@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - PowerGrid Maintenance{% endblock %}
+
+{% block head %}
+<style>
+    .dashboard-hero {
+        background: linear-gradient(135deg, rgba(16, 94, 165, 0.08), rgba(34, 197, 94, 0.06));
+        border: 1px solid rgba(98, 105, 118, 0.12);
+        border-radius: 1rem;
+        padding: 1.25rem;
+    }
+    .metric-icon {
+        width: 2.75rem; height: 2.75rem;
+        display: inline-flex; align-items: center; justify-content: center;
+        border-radius: 999px; font-weight: 700; color: #fff;
+    }
+    .metric-value { font-size: 1.75rem; line-height: 1; font-weight: 700; }
+    .summary-list { display: grid; gap: 0.9rem; }
+    .summary-row {
+        display: grid; grid-template-columns: minmax(0, 1fr) auto;
+        gap: 0.75rem; align-items: center;
+    }
+    .summary-bar {
+        height: 0.5rem; border-radius: 999px;
+        background: rgba(98, 105, 118, 0.12); overflow: hidden;
+    }
+    .summary-bar > span {
+        display: block; height: 100%; border-radius: inherit;
+        background: linear-gradient(90deg, #206bc4, #2fb344);
+    }
+    .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-hero mb-4">
+    <div class="row align-items-center g-3">
+        <div class="col-12 col-lg">
+            <div class="page-pretitle text-primary fw-bold">
+                {% if current_workspace %}{{ current_workspace.name }}{% else %}POWERGRID CENTRAL{% endif %}
+            </div>
+            <h2 class="page-title mb-1">Operations Dashboard</h2>
+            <p class="page-subtitle text-muted mb-0">
+                {% if (current_workspace_role or current_user.role) == 'engineer' %}
+                Displaying transmission grid ledger. Your assigned maintenance tasks are highlighted below.
+                {% else %}
+                Overview of critical transmission assets, open defect ledgers, and resolution SLAs.
+                {% endif %}
+            </p>
+        </div>
+        <div class="col-12 col-lg-auto d-flex gap-2 flex-wrap">
+            <a href="{{ url_for('workspace.workspaces_hub') }}" class="btn btn-outline-secondary w-100 w-lg-auto">
+                Switch Sector
+            </a>
+            {% if (current_workspace_role or current_user.role) in ['head', 'manager', 'engineer'] %}
+            <a href="{{ url_for('add_defect') }}" class="btn btn-primary w-100 w-lg-auto">
+                + Add Defect
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="pg-stats mb-1">
+    {% for card in dashboard_cards %}
+    <div class="pg-stat {% if card.label == 'Overdue' %}pg-stat-hot{% elif card.label == 'Resolved Today' %}pg-stat-accent{% endif %}">
+        <div class="pg-stat-label">{{ card.label }}</div>
+        <div class="pg-stat-value">{{ card.value }}</div>
+    </div>
+    {% endfor %}
+</div>
+
+{# ── Engineer: My Assigned Defects panel ── #}
+{% if my_defects is not none %}
+<div class="card mt-4">
+    <div class="card-header">
+        <h3 class="card-title">My Assigned Defects</h3>
+        <div class="card-options">
+            <span class="badge bg-yellow">{{ my_defects|length }} pending</span>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table card-table table-vcenter">
+            <thead>
+                <tr>
+                    <th>ID</th><th>Asset</th><th>Priority</th>
+                    <th>Status</th><th>Due</th><th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in my_defects %}
+                <tr>
+                    <td><span class="badge bg-blue-lt">DFT-{{ d.id }}</span></td>
+                    <td>
+                        <div class="fw-semibold">{{ d.asset.asset_name }}</div>
+                        <div class="text-muted small">
+                            <span class="badge bg-light text-dark">{{ d.asset.asset_type.name }}</span>
+                            {% if d.asset.is_component %}
+                            <span class="badge bg-purple-lt">Part of {{ d.asset.parent_name }}</span>
+                            {% endif %}
+                            &bull; {{ d.asset.location.full_path }}
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge {% if d.priority == 'Critical' %}bg-red{% elif d.priority == 'High' %}bg-orange{% elif d.priority == 'Medium' %}bg-yellow{% else %}bg-green{% endif %}">
+                            {{ d.priority }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge {% if d.status == 'In Progress' %}bg-azure{% else %}bg-yellow{% endif %}">
+                            {{ d.status }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge {{ d.sla_info.tone }}">{{ d.sla_info.label }}</span>
+                        <div class="text-muted small" style="font-size:0.75rem;">{{ d.expected_resolution.strftime('%Y-%m-%d') if d.expected_resolution else '—' }}</div>
+                    </td>
+                    <td><a href="{{ url_for('edit_defect', defect_id=d.id) }}" class="btn btn-sm btn-primary">Update</a></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-3">No defects assigned to you.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<div class="row mt-4">
+    <div class="col-12 col-xl-7">
+        <div class="card h-100 shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="card-title mb-0">Recent Defects</h3>
+                <a href="{{ url_for('defects') }}" class="btn btn-sm btn-link">View All &rarr;</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-vcenter card-table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Equipment &amp; Component</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Reported</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for defect in recent_defects %}
+                        <tr style="cursor: pointer;" onclick="window.location='{{ url_for('defects', defect_id=defect.id) }}';">
+                            <td><span class="badge bg-blue-lt">DFT-{{ defect.id }}</span></td>
+                            <td>
+                                <div class="fw-semibold">{{ defect.asset.asset_name }}</div>
+                                <div class="text-muted small">
+                                    <span class="badge bg-light text-dark">{{ defect.asset.asset_type.name }}</span>
+                                    {% if defect.asset.is_component %}
+                                    <span class="badge bg-purple-lt">Part of {{ defect.asset.parent_name }}</span>
+                                    {% endif %}
+                                    &bull; {{ defect.asset.location.full_path }}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge {% if defect.priority == 'Critical' %}bg-red{% elif defect.priority == 'High' %}bg-orange{% elif defect.priority == 'Medium' %}bg-yellow{% else %}bg-green{% endif %}">
+                                    {{ defect.priority }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge {% if defect.status == 'Resolved' %}bg-green{% elif defect.status == 'In Progress' %}bg-azure{% else %}bg-yellow{% endif %}">
+                                    {{ defect.status }}
+                                </span>
+                            </td>
+                            <td class="text-muted small">{{ defect.reported_at.strftime('%Y-%m-%d %H:%M') if defect.reported_at else '-' }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">No defects recorded yet.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-xl-5 mt-4 mt-xl-0">
+        <div class="card h-100">
+            <div class="card-header">
+                <h3 class="card-title">Defect Breakdown</h3>
+            </div>
+            <div class="card-body">
+                <div class="summary-list mb-4">
+                    <div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted fw-medium">Priority</span>
+                            <span class="text-muted small">{{ total_defects }} total defects</span>
+                        </div>
+                        <div class="summary-list">
+                            {% for item in priority_breakdown %}
+                            <div>
+                                <div class="summary-row mb-1">
+                                    <span>{{ item.label }}</span>
+                                    <span class="text-muted">{{ item.count }}</span>
+                                </div>
+                                <div class="summary-bar">
+                                    <span data-progress="{{ item.progress }}"></span>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="text-muted">No priority data yet.</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted fw-medium">Status</span>
+                        </div>
+                        <div class="summary-list">
+                            {% for item in status_breakdown %}
+                            <div>
+                                <div class="summary-row mb-1">
+                                    <span>{{ item.label }}</span>
+                                    <span class="text-muted">{{ item.count }}</span>
+                                </div>
+                                <div class="summary-bar">
+                                    <span data-progress="{{ item.progress }}"></span>
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="text-muted">No status data yet.</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.querySelectorAll('[data-progress]').forEach((bar) => {
+        var progress = Number(bar.dataset.progress || 0);
+        bar.style.width = Math.max(0, Math.min(progress, 100)) + '%';
+    });
+</script>
+{% endblock %}

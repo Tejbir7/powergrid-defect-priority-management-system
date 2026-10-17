@@ -1,0 +1,52 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: powergrid-db
+    environment:
+      MYSQL_ROOT_PASSWORD: powergrid
+      MYSQL_DATABASE: power_db
+      MYSQL_USER: powergrid_user
+      MYSQL_PASSWORD: powergrid
+    volumes:
+      - powergrid-db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-ppowergrid"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    image: powergrid-backend
+    environment:
+      SECRET_KEY: ${SECRET_KEY:-powergrid-docker-secret}
+      DATABASE_URL: mysql+pymysql://powergrid_user:powergrid@db:3306/power_db
+      ENABLE_SCHEDULER: "True"
+      BEHIND_PROXY: "true"
+      FLASK_DEBUG: "False"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/login')"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 15s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    image: powergrid-frontend
+    ports:
+      - "5000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  powergrid-db:

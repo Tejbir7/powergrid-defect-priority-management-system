@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Team &amp; Workspaces – PowerGrid{% endblock %}
+
+{% block head %}
+<style>
+    .admin-hero {
+        background: linear-gradient(135deg, rgba(32, 107, 196, 0.10), rgba(139, 92, 246, 0.08));
+        border: 1px solid rgba(98, 105, 118, 0.16);
+        border-radius: 1rem;
+        padding: 1.35rem;
+    }
+    .role-badge-head     { background: #8b5cf6; color: #fff; }
+    .role-badge-manager  { background: #0ea5e9; color: #fff; }
+    .role-badge-engineer { background: #10b981; color: #fff; }
+    .role-badge-viewer   { background: #6b7280; color: #fff; }
+    .role-badge { display:inline-block; padding:0.2rem 0.6rem; border-radius:999px;
+                  font-size:0.72rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; }
+    .invite-box {
+        background: rgba(32, 107, 196, 0.06);
+        border: 1px dashed rgba(32, 107, 196, 0.35);
+        border-radius: 0.75rem;
+        padding: 1rem;
+    }
+    .copy-toast {
+        display: none;
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        z-index: 9999;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-hero mb-4">
+    <div class="row align-items-center g-3">
+        <div class="col-md-7">
+            <div class="page-pretitle text-primary fw-bold">WORKSPACE ACCESS &amp; RBAC</div>
+            <h1 class="page-title mb-1">
+                {% if workspace %}{{ workspace.name }} &mdash; Members{% else %}Team Management{% endif %}
+            </h1>
+            <p class="text-muted mb-0">
+                Manage roles, approvals, and shareable invite codes for transmission engineers and auditors.
+            </p>
+        </div>
+        <div class="col-md-5 text-md-end">
+            <a href="{{ url_for('workspace.workspaces_hub') }}" class="btn btn-outline-primary">
+                Switch Workspace
+            </a>
+        </div>
+    </div>
+</div>
+
+{# ── Shareable Invite Code Box ── #}
+{% if workspace %}
+<div class="card mb-4 invite-box">
+    <div class="row align-items-center g-3">
+        <div class="col-md-7">
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon text-primary" width="22" height="22" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                    <path d="M10 14a3.5 3.5 0 0 0 5 0l4 -4a3.5 3.5 0 0 0 -5 -5l-.5 .5"></path>
+                    <path d="M14 10a3.5 3.5 0 0 0 -5 0l-4 4a3.5 3.5 0 0 0 5 5l.5 -.5"></path>
+                </svg>
+                <h4 class="mb-0 fw-bold">Shareable Workspace Invite Link</h4>
+            </div>
+            <p class="text-muted small mb-0">
+                Engineers who visit this link can sign up or log in to immediately join <strong>{{ workspace.name }}</strong>.
+            </p>
+        </div>
+        <div class="col-md-5">
+            <div class="input-group">
+                <input type="text" id="shareableLinkInput" class="form-control form-control-sm" readonly
+                       value="{{ request.host_url }}join/{{ workspace.invite_code }}">
+                <button class="btn btn-sm btn-primary" type="button" onclick="copyShareableLink()">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-sm me-1" width="16" height="16" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                        <rect x="8" y="8" width="12" height="12" rx="2"></rect>
+                        <path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2"></path>
+                    </svg>
+                    Copy Link
+                </button>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-2 small">
+                <span class="text-muted">Invite Code: <code>{{ workspace.invite_code }}</code></span>
+                <form method="POST" action="{{ url_for('workspace.regenerate_invite', workspace_id=workspace.id) }}"
+                      onsubmit="return confirm('Regenerate invite code? Previous links will cease to function.');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn-link btn-sm text-muted p-0">Regenerate Code</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{# ── Workspace Members Table ── #}
+{% if workspace and memberships %}
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h3 class="card-title mb-0">Workspace Crew Members ({{ memberships|length }})</h3>
+        <span class="badge bg-primary-lt">{{ workspace.name }}</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table card-table table-vcenter">
+            <thead>
+                <tr>
+                    <th>Engineer / User</th>
+                    <th>Email</th>
+                    <th>Workspace Role</th>
+                    <th>Joined Sector</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mem in memberships %}
+                {% set u = mem.user %}
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="avatar avatar-xs bg-blue-lt fw-bold text-uppercase">
+                                {{ u.username[:2] }}
+                            </span>
+                            <div>
+                                <div class="fw-medium">{{ u.username }}</div>
+                                {% if u.id == current_user.id %}
+                                <div class="text-muted small">You (Active Session)</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="text-muted">{{ u.email }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('admin.change_workspace_member_role', membership_id=mem.id) }}" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <select name="role" class="form-select form-select-sm d-inline-block w-auto"
+                                    onchange="this.form.submit()"
+                                    {% if u.id == current_user.id %}disabled{% endif %}>
+                                <option value="head" {{ 'selected' if mem.role == 'head' }}>Head Administrator</option>
+                                <option value="manager" {{ 'selected' if mem.role == 'manager' }}>Manager</option>
+                                <option value="engineer" {{ 'selected' if mem.role == 'engineer' }}>Engineer</option>
+                                <option value="viewer" {{ 'selected' if mem.role == 'viewer' }}>Viewer</option>
+                            </select>
+                        </form>
+                    </td>
+                    <td class="text-muted small">{{ mem.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td>
+                        {% if u.id != current_user.id %}
+                        <form method="POST" action="{{ url_for('admin.remove_workspace_member', membership_id=mem.id) }}"
+                              onsubmit="return confirm('Remove {{ u.username }} from {{ workspace.name }}?');" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Remove from Sector</button>
+                        </form>
+                        {% else %}
+                        <span class="text-muted small">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{# ── Global Platform Users (Head Only) ── #}
+{% if current_user.role == 'head' and users %}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Global User Directory &amp; Audit Status</h3>
+    </div>
+    <div class="table-responsive">
+        <table class="table card-table table-vcenter">
+            <thead>
+                <tr>
+                    <th>User</th>
+                    <th>Email</th>
+                    <th>Global Role</th>
+                    <th>Account Status</th>
+                    <th>Registered</th>
+                    <th>Global Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="avatar avatar-xs bg-dark-lt fw-bold text-uppercase">
+                                {{ u.username[:2] }}
+                            </span>
+                            <div>
+                                <div class="fw-medium">{{ u.username }}</div>
+                                {% if u.id == current_user.id %}
+                                <div class="text-muted small">You</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="text-muted">{{ u.email }}</td>
+                    <td>
+                        <span class="role-badge role-badge-{{ u.role }}">{{ u.role }}</span>
+                    </td>
+                    <td>
+                        {% if u.is_approved %}
+                        <span class="badge bg-green">Active</span>
+                        {% else %}
+                        <span class="badge bg-yellow">Pending</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-muted small">{{ u.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td>
+                        {% if u.id != current_user.id %}
+                        <form method="POST" action="{{ url_for('reject_user', user_id=u.id) }}"
+                              onsubmit="return confirm('Revoke account access for {{ u.username }}?');" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Revoke</button>
+                        </form>
+                        {% else %}
+                        <span class="text-muted small">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{# ── Toast alert for copied link ── #}
+<div id="copyToast" class="alert alert-success shadow copy-toast" role="alert">
+    <strong>Link Copied!</strong> Workspace shareable invite link copied to clipboard.
+</div>
+
+<script>
+function copyShareableLink() {
+    const input = document.getElementById('shareableLinkInput');
+    input.select();
+    navigator.clipboard.writeText(input.value).then(function() {
+        const toast = document.getElementById('copyToast');
+        toast.style.display = 'block';
+        setTimeout(function() {
+            toast.style.display = 'none';
+        }, 2500);
+    }).catch(function() {
+        prompt("Copy this invite link:", input.value);
+    });
+}
+</script>
+{% endblock %}

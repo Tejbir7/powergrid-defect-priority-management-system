@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Join {{ workspace.name }} – PowerGrid{% endblock %}
+
+{% block content %}
+<div class="container-tight py-4" style="max-width: 520px; margin: 0 auto;">
+    <div class="text-center mb-4">
+        <a href="{{ url_for('workspace.workspaces_hub') }}" class="navbar-brand navbar-brand-autodark">
+            {% include "components/logo.html" %}
+            <span class="h2 fw-bold">PowerGrid Central</span>
+        </a>
+    </div>
+
+    <div class="card card-md shadow-sm border">
+        <div class="card-status-top bg-primary"></div>
+        <div class="card-body p-4 text-center">
+            <span class="avatar avatar-xl rounded-circle bg-blue-lt mb-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor" fill="none">
+                    <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+                    <line x1="9" y1="9" x2="9" y2="15"></line>
+                    <line x1="15" y1="9" x2="15" y2="15"></line>
+                    <line x1="9" y1="12" x2="15" y2="12"></line>
+                </svg>
+            </span>
+
+            <div class="text-uppercase text-muted fw-bold small mb-1">Grid Workspace Invitation</div>
+            <h2 class="card-title h1 mb-2">{{ workspace.name }}</h2>
+
+            <p class="text-muted mb-4">
+                You have been invited to collaborate on this high-voltage transmission grid partition.
+            </p>
+
+            <div class="row g-2 text-start p-3 bg-light rounded border mb-4">
+                <div class="col-6">
+                    <div class="text-muted small">Workspace Head</div>
+                    <div class="fw-semibold">{{ creator.username if creator else 'System Admin' }}</div>
+                </div>
+                <div class="col-6">
+                    <div class="text-muted small">Active Members</div>
+                    <div class="fw-semibold">{{ members_count }} engineer(s)</div>
+                </div>
+                <div class="col-6 mt-2">
+                    <div class="text-muted small">Grid Equipment</div>
+                    <div class="fw-semibold">{{ assets_count }} asset(s)</div>
+                </div>
+                <div class="col-6 mt-2">
+                    <div class="text-muted small">Your Role</div>
+                    <div class="badge bg-green text-uppercase">Engineer</div>
+                </div>
+            </div>
+
+            <div class="text-muted small mb-3">
+                Signed in as <strong>{{ current_user.username }}</strong> ({{ current_user.email }})
+            </div>
+
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {% if is_already_member %}
+                <button type="submit" class="btn btn-primary w-100 mb-2">
+                    Enter Workspace &rarr;
+                </button>
+                <div class="text-muted small">You are already a member of this workspace.</div>
+                {% else %}
+                <button type="submit" class="btn btn-primary w-100 mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon me-1" width="20" height="20" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none">
+                        <path d="M5 12l5 5l10 -10"></path>
+                    </svg>
+                    Join Grid Workspace
+                </button>
+                {% endif %}
+            </form>
+
+            <div class="mt-3">
+                <a href="{{ url_for('workspace.workspaces_hub') }}" class="btn btn-link text-muted">
+                    Cancel &amp; Go to Workspaces Hub
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
