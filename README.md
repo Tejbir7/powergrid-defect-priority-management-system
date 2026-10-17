@@ -1,324 +1,349 @@
-# PowerGrid — Defect Priority Management System
+<p align="center">
+  <img src="static/img/powergrid-logo.png" alt="PowerGrid logo" width="96">
+</p>
 
-![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![Flask](https://img.shields.io/badge/Flask-2.x-000000?style=for-the-badge&logo=flask&logoColor=white)
-![MySQL](https://img.shields.io/badge/MySQL-8.0_InnoDB-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
-![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-ORM-D71F00?style=for-the-badge)
-![Architecture](https://img.shields.io/badge/Schema-3NF_Normalized-blue?style=for-the-badge)
-![ACID](https://img.shields.io/badge/Transactions-ACID_Compliant-success?style=for-the-badge)
-![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+<h1 align="center">PowerGrid</h1>
 
-A full-stack, enterprise-grade web application for tracking, prioritizing, and resolving equipment defects across electrical power grid infrastructure. Architected with a modular **Application Factory pattern**, **Third Normal Form (3NF)** relational database schema, full **ACID compliance**, **Multi-Tenant Workspaces**, granular **Role-Based Access Control (RBAC)**, hierarchical physical location and asset trees, and automated background reminder scheduling.
+<p align="center">
+  Defect priority management for a transmission grid.<br>
+  Operators sign in, open a sector, and move equipment faults from Open to In Progress to Resolved.
+</p>
 
----
+PowerGrid is a Flask application with a MySQL database. One process renders the pages, checks who is signed in, and writes the defect ledger. A separate nginx container can serve the CSS, JavaScript, and logo while gunicorn runs the application.
 
-### Why PowerGrid?
-Power grid infrastructure maintenance traditionally suffered from fragmented logs across physical logbooks or disconnected spreadsheets. This created critical visibility gaps: equipment faults went unprioritized, component-level failure histories were lost, audit trails were non-existent, and SLA deadlines passed unnoticed. 
+The mark at the top of this page is the project logo. It is the bolt-and-return artwork in `power_grid.png` with the yellow field removed, saved as `static/img/powergrid-logo.png`. That file is what the sidebar and the sign-in pages use. It is distributed with this repository under the MIT License. See [License](#license).
 
-PowerGrid digitizes the entire lifecycle into a unified, secure, and normalized relational platform tailored specifically for mission-critical transmission and substation operations.
+## What the app is for
 
----
+Grid maintenance used to live in logbooks and spreadsheets. A fault on a cooling fan could be recorded without a link to the transformer it belongs to, and a deadline could pass with no record of who changed the status. PowerGrid keeps that history in one workspace per sector.
 
-## Architecture Overview
+A workspace is the tenant. The demo sector is POWERGRID Punjab Transmission Grid. Inside it, locations form a tree (region, substation, bay) and equipment forms a tree (a cooling fan belongs to a transformer). A defect points at one asset, records who created it, and optionally who it is assigned to. Every status change writes an audit row.
 
-PowerGrid uses a scalable, modular design following the **Application Factory pattern** with decoupled domain blueprints, service layers, and data models:
+## Demo accounts
 
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                        Flask Application Factory                       │
-│                              (create_app)                              │
-└──────┬───────────────┬─────────────────┬────────────────┬──────────────┘
-       │               │                 │                │
-       ▼               ▼                 ▼                ▼
- ┌───────────┐   ┌───────────┐     ┌───────────┐    ┌───────────┐
- │ Blueprints│   │ Database  │     │ Services  │    │ Extensions│
- │ (routes/) │   │ (models/) │     │(services/)│    │(SQLAlchemy│
- │ • auth    │   │ • user    │     │ • email   │    │  Bcrypt   │
- │ • workspace│  │ •workspace│     │ •scheduler│    │  CSRF     │
- │ • defects │   │ • asset   │     │ • crypto  │    │  Mail     │
- │ • assets  │   │ • defect  │     └───────────┘    │ Scheduler)│
- │ • admin   │   │ • location│                      └───────────┘
- │ • settings│   │ • reminder│
- └───────────┘   └───────────┘
-```
+| Email | Password | Global role | Workspace role |
+| --- | --- | --- | --- |
+| `admin@powergrid.in` | `powergrid123` | head | head of the Punjab workspace |
+| `engineer1@powergrid.in` | `powergrid123` | engineer | engineer in the same workspace |
 
----
+The invite code for that workspace is `pg-punjab-2026`.
 
-## 3NF Database Architecture (11 Tables)
+Seeded records:
 
-The relational schema strictly adheres to **Third Normal Form (3NF)**: all non-key attributes depend solely on their primary keys, with zero transitive dependencies and zero redundant data duplication.
+- Locations: Punjab Region, then Amritsar Substation and Ludhiana Substation, then Bay 1 and Bay 2 under Amritsar.
+- Assets: Transformer T1, Transformer T2, Circuit Breaker CB-01, and Cooling Fan 1 and 2 under T1.
+- Defects: an oil leak on T1 (Critical, Open, assigned to engineer1), a vibrating fan (High, In Progress), and breaker contact resistance (Medium, Open, unassigned).
 
-```
-                           ┌───────────────┐
-                           │     USERS     │
-                           └───┬───────┬───┘
-                               │       │
-             ┌─────────────────┘       └──────────────────┐
-             │ user_id                                    │ user_id
-             ▼                                            ▼
-┌─────────────────────────┐                     ┌───────────────────┐
-│    WORKSPACE_MEMBERS    │                     │     REMINDERS     │
-└────────────┬────────────┘                     └───────────────────┘
-             │ workspace_id
-             ▼
-┌─────────────────────────┐
-│       WORKSPACES        │
-└──────┬────────────┬─────┘
-       │            │
-       │ workspace_id
-       │            │ workspace_id
-       ▼            ▼
-┌───────────┐ ┌───────────┐
-│ LOCATIONS │ │  ASSETS   │
-└─────▲─────┘ └─────┬─────┘
-      │ location_id │
-      └─────────────┘
-             │ asset_id
-             ▼
-       ┌───────────┐          changed_by_id     ┌────────────────────┐
-       │  DEFECTS  │───────────────────────────>│ DEFECT_STATUS_LOGS │
-       └───────────┘                            └────────────────────┘
-                                                     ▲
-                                                     │ defect_id
-                                                     └──────────────────┘
+`DFT-12` is not a database column. The interface prints `DFT-` plus the integer primary key. Search accepts `12` or `DFT-12` and strips the prefix before the lookup.
 
-LOOKUP & SYSTEM CONFIG TABLES:
-• location_types ──> locations (Region, Substation, Bay)
-• asset_types    ──> assets    (Transformer, Circuit Breaker, Cooling Fan)
-• app_settings   (Key-value store with TEXT values for dynamic runtime SMTP config)
-```
+## Run it
 
-### Table Breakdown
+Python 3.10 or newer, Docker, and Git are enough. `make` is the short path. It creates `env/`, copies `.env` from `.env.example` when that file is missing, installs dependencies, starts MySQL 8 in Docker, and runs the app.
 
-1. **`users`**: System user accounts (`id`, `username` [UNIQUE], `email` [UNIQUE], `password_hash`, `role`, `is_approved`, `reset_token`, `reset_token_expiry`, audit timestamps).
-2. **`workspaces`**: Grid corporate/regional boundaries (`id`, `name` [UNIQUE], `invite_code` [UNIQUE], `created_by_id`, audit timestamps).
-3. **`workspace_members`**: Normalized M:N mapping of users to workspaces with scoped permissions (`workspace_id`, `user_id`, `role`, `is_approved`).
-4. **`location_types`**: Master category lookup (`Region`, `Substation`, `Bay`).
-5. **`locations`**: Self-referencing physical hierarchy (`parent_location_id`, `workspace_id`) allowing arbitrary depth (e.g., Punjab Region &rarr; Amritsar Substation &rarr; Bay 1).
-6. **`asset_types`**: Master equipment category lookup (`Transformer`, `Circuit Breaker`, `Cooling Fan`, etc.).
-7. **`assets`**: Equipment registry with `asset_type_id`, `location_id`, `workspace_id`, and `parent_asset_id` (e.g., Transformer T1 &rarr; Cooling Fan 1). Child equipment automatically inherits and synchronizes locations with parents.
-8. **`defects`**: Operational defect records (`workspace_id`, `asset_id`, `created_by_id`, `assigned_user_id`, `priority`, `status`, `description` [NOT NULL], `reported_at`, `expected_resolution`, `resolved_at`).
-9. **`defect_status_logs`**: Immutable audit ledger recording every lifecycle state transition, author, timestamp, and justification comment.
-10. **`reminders`**: Per-user background email reminder schedules (`UNIQUE(user_id, type)`).
-11. **`app_settings`**: Key-value table (`key` PK, `value` TEXT) for persistent configuration that survives server restarts.
-
----
-
-## ACID Compliance & Reliability
-
-The application runs on the **MySQL InnoDB** storage engine managed through SQLAlchemy transactional sessions:
-
-- **Atomicity**: Multi-table operations (such as registering a defect and generating its initial immutable audit status log) are wrapped in atomic transactions. Partial writes roll back completely via InnoDB Undo Logs.
-- **Consistency**: Guaranteed through engine-level Foreign Key constraints, Domain `CHECK` constraints (`status IN ('Open', 'In Progress', 'Resolved')`, `priority IN ('Low', 'Medium', 'High', 'Critical')`), non-null constraints, and application validation hooks.
-- **Isolation**: Executed under MySQL **`REPEATABLE-READ`** with Multi-Version Concurrency Control (MVCC) and row-level locking to prevent dirty and non-repeatable reads.
-- **Durability**: Guaranteed via Write-Ahead Logging (WAL) and Redo Logs (`innodb_flush_log_at_trx_commit = 1`), preserving committed changes across power loss or crashes.
-
----
-
-## Key Features
-
-### 🏢 Multi-Tenant Workspaces
-- Segment equipment, locations, defects, and teams into distinct grid workspaces (e.g., Regional Transmission grids).
-- Quick join via unique shareable invitation codes.
-- Seamless workspace switching via the navigation interface with persisted active session context.
-
-### 🛡️ Role-Based Access Control (RBAC)
-Granular access control enforced per workspace:
-
-| Role | Permissions |
-|---|---|
-| **Head / Admin** | Complete access: user approvals, role changes, workspace settings, equipment, and defect administration |
-| **Manager** | Create defects, assign field engineers, prioritize issues, and manage equipment |
-| **Engineer** | Log defects, view assigned tasks, update defect statuses, and append resolution comments |
-| **Viewer** | Read-only access to dashboards, equipment trees, and defect archives |
-
-### 🌲 Hierarchical Equipment & Defect Trees
-- Models physical grid hierarchy from transmission regions down to individual substation bays.
-- Component-level failure tracking: attach defects directly to subcomponents (e.g., Cooling Fan) while maintaining parent asset traceability (e.g., Transformer).
-- Automatic location cascading: child equipment automatically stays in sync with parent asset location updates.
-
-### 🔄 Defect Lifecycle & Audit Ledger
-- Strict lifecycle states: **Open &rarr; In Progress &rarr; Resolved**.
-- Dynamic SLA calculation with visual SLA badges (Overdue, Due Soon, On Schedule).
-- Permanent audit ledger: every change logs the user, old status, new status, timestamp, and notes.
-
-### ✉️ Automated Email Reminders & Notifications
-- Background automation powered by **APScheduler**.
-- Per-user customizable frequency: Daily, Weekly, or Monthly digest at a designated hour.
-- Personalized emails summarizing overdue and pending defects assigned to the user.
-- Password recovery with time-limited cryptographic reset tokens.
-- Dynamic SMTP configuration: update mail credentials on-the-fly via the Admin Settings UI without redeployment.
-
----
-
-## Project Structure
-
-```
-powergrid/
-├── app.py                      # Application factory (create_app) and WSGI entry point
-├── config.py                   # Environment configuration & DB connection pool settings
-├── extensions.py               # Initialized Flask extensions (db, bcrypt, mail, scheduler)
-├── Procfile                    # Production WSGI process definition (Gunicorn)
-├── requirements.txt            # Python dependencies
-├── .env.example                # Template for environment variables
-├── .gitignore                  # Git exclusions for Python, caches, and secrets
-│
-├── cli/                        # Flask CLI management commands
-│   ├── __init__.py             # CLI registration hook
-│   └── commands.py             # Database seed (`seed-db`) and reset (`reset-db`)
-│
-├── models/                     # 3NF SQLAlchemy database models
-│   ├── __init__.py             # Model exports
-│   ├── asset.py                # Asset & AssetType models
-│   ├── defect.py               # Defect & DefectStatusLog models
-│   ├── location.py             # Location & LocationType models
-│   ├── reminder.py             # Per-user email reminder preferences
-│   ├── settings.py             # Dynamic key-value AppSettings
-│   ├── user.py                 # User authentication & password hashing
-│   └── workspace.py            # Workspace & WorkspaceMember models
-│
-├── routes/                     # Modular Flask Blueprints
-│   ├── __init__.py             # Blueprint auto-registration
-│   ├── admin.py                # User approval and system administration
-│   ├── assets.py               # Equipment inventory and hierarchy
-│   ├── auth.py                 # Login, registration, and password recovery
-│   ├── defects.py              # Defect management, SLA, and audit history
-│   ├── errors.py               # Custom HTTP error pages (403, 404, 500)
-│   ├── settings.py             # SMTP configuration & reminder settings
-│   └── workspace.py            # Workspace switching, creation, and joining
-│
-├── services/                   # Decoupled business logic
-│   ├── __init__.py             # Service exports
-│   ├── crypto.py               # Secure token generation
-│   ├── email_service.py        # Mail delivery and dynamic SMTP reloader
-│   └── scheduler_service.py    # APScheduler job management
-│
-├── utils/                      # Helper utilities and decorators
-│   ├── __init__.py             # Utility exports
-│   ├── auth.py                 # RBAC decorators and Flask-Login user loader
-│   └── queries.py              # Scoped workspace database queries
-│
-├── templates/                  # Jinja2 HTML templates (Tabler UI)
-│   ├── components/             # Reusable UI partials
-│   │   ├── navbar.html         # Top navigation bar with workspace switcher
-│   │   └── sidebar.html        # Main navigation sidebar
-│   ├── add_defect.html         # Defect entry form
-│   ├── admin_users.html        # User management & role assignments
-│   ├── assets.html             # Equipment tree & defect counts
-│   ├── base.html               # Layout base template
-│   ├── dashboard.html          # Operational KPI dashboard
-│   ├── defect_history.html     # Resolved defects archive
-│   ├── defects.html            # Active defects list & filtering
-│   ├── forgot_password.html    # Password recovery request form
-│   ├── join.html               # Workspace invitation code join page
-│   ├── login.html              # Authentication portal
-│   ├── pending_approval.html   # User approval waiting screen
-│   ├── register.html           # Initial administrator setup / registration
-│   ├── reset_password.html     # New password submission form
-│   ├── settings.html           # SMTP credentials & reminder schedule preferences
-│   └── workspaces.html         # Workspace directory & creation
-│
-└── static/                     # Tabler UI CSS, JavaScript, and asset libraries
-```
-
----
-
-## Local Setup
-
-### Prerequisites
-- Python 3.10 or higher
-- MySQL 8.0+ running locally or remotely
-- Git
-
-### 1. Clone the Repository
 ```bash
 git clone https://github.com/Tejbir7/powergrid-defect-priority-management-system.git
 cd powergrid-defect-priority-management-system
+make
 ```
 
-### 2. Set Up Virtual Environment
+Open `http://127.0.0.1:5000`. `make stop` stops the MySQL container used by this local process.
+
+On the first start of an empty database, `python app.py` creates the tables and calls `seed_demo_data()`. If any user already exists, seeding does nothing. `flask reset-db` drops the tables, recreates them, and seeds again. `flask seed-db` only seeds.
+
+### Docker
+
+`make up` builds three containers and publishes only the frontend:
+
+| Service | Role |
+| --- | --- |
+| `frontend` | nginx. Serves `/static/` and proxies every other request to the backend. Host port 5000. |
+| `backend` | gunicorn running `app:app`. Creates tables, seeds an empty database, and runs the reminder clock in one worker. |
+| `db` | MySQL 8, data kept in the `powergrid-db` volume. Not published on the host. |
+
 ```bash
-python -m venv env
-
-# On Windows (PowerShell):
-.\env\Scripts\activate
-
-# On macOS / Linux:
-source env/bin/activate
+make up
+make down
 ```
 
-### 3. Install Dependencies
+Do not run `make` and `make up` at the same time. Both want port 5000.
+
+### Tests
+
+`make test` installs dependencies if needed and runs pytest. The suite uses an in-memory SQLite database, so it does not touch the MySQL data. To print every test name:
+
 ```bash
-pip install -r requirements.txt
+env/bin/python -m pytest -v
 ```
 
-### 4. Configure Environment Variables
-Copy the example environment configuration:
-```bash
-# Windows:
-copy .env.example .env
+The tests sign in as both demo users, walk the public and signed-in pages, create and edit a defect, check the 403 responses, and call the email helpers with `mail.send` replaced by a fake. No real SMTP connection is opened.
 
-# macOS / Linux:
-cp .env.example .env
-```
+### Environment
 
-Edit `.env` with your database credentials:
+`.env.example` lists the variables `config.py` reads. `SECRET_KEY` and `DATABASE_URL` are required. A local URL looks like this:
+
 ```env
 SECRET_KEY=generate-a-strong-secret-key
 DATABASE_URL=mysql+pymysql://powergrid_user:powergrid@localhost:3306/power_db
-
-# Optional: Email Notifications
-MAIL_SERVER=smtp.gmail.com
-MAIL_PORT=587
-MAIL_USE_TLS=True
-MAIL_USERNAME=your-email@gmail.com
-MAIL_PASSWORD=your-app-password
-
-# Scheduler & Debugging
 ENABLE_SCHEDULER=True
 FLASK_DEBUG=False
 ```
 
-### 5. Initialize & Seed Database
-Reset and populate the database with master lookup data, default Punjab hierarchy, equipment trees, and demo tickets:
-```bash
-flask reset-db
+Mail settings can also be saved later from the Settings page. Those values live in `app_settings` and override the process environment when `reload_mail_config()` runs.
+
+## How a request moves
+
+`app.py` exposes `create_app()`. Importing the module also builds the WSGI object `app` that gunicorn loads. Running `python app.py` creates the tables, seeds demo rows when the database is empty, loads SMTP settings, registers reminder jobs, and starts the scheduler when `ENABLE_SCHEDULER` is true.
+
+```mermaid
+flowchart TD
+    browser[Browser] --> flask[Flask create_app]
+    flask --> config[Config from environment]
+    flask --> ext[Extensions: db, csrf, bcrypt, mail, login, scheduler]
+    flask --> bp[Blueprints]
+    bp --> auth[auth: login, register, reset]
+    bp --> ws[workspace: hub, join, switch]
+    bp --> defects[defects: dashboard, ledger, history]
+    bp --> assets[assets: equipment]
+    bp --> admin[admin: crew and roles]
+    bp --> settings[settings: reminders and SMTP]
+    auth --> mysql[(MySQL)]
+    ws --> mysql
+    defects --> mysql
+    assets --> mysql
+    admin --> mysql
+    settings --> mysql
+    settings --> mail[Flask-Mail]
+    settings --> jobs[APScheduler]
+    jobs --> mail
+    bp --> jinja[Jinja templates plus powergrid.css]
+    jinja --> browser
 ```
-*(Or use `flask seed-db` on an existing schema without dropping tables).*
 
-#### Default Demo Accounts
-- **Head Administrator**: `admin@powergrid.in` / `powergrid123`
-- **Field Engineer**: `engineer1@powergrid.in` / `powergrid123`
-- **Default Workspace**: `POWERGRID Punjab Transmission Grid` (Invite code: `pg-punjab-2026`)
+Every signed-in page runs a context processor. It reads `session["active_workspace_id"]`, loads that workspace, and tells the sidebar which sector is active and what the user's role is there. If the session has no workspace yet, it picks the user's first membership and stores that id.
 
-### 6. Run the Application
-```bash
-python app.py
+Blueprints live in `routes/`. Templates call short names such as `url_for('dashboard')`. `routes/__init__.py` registers a second URL rule for the bare name, so `dashboard` and `defects.dashboard` are the same view.
+
+Behind nginx, the backend sets `BEHIND_PROXY=true` so Werkzeug's proxy fix trusts the forwarded host and protocol.
+
+## Sign-in, then the workspace session
+
+Login does not open the dashboard directly. It opens the workspaces hub. Choosing a sector stores `active_workspace_id` in the Flask session, which is a signed cookie. Later pages use that id to filter defects, assets, and crew.
+
+```mermaid
+sequenceDiagram
+    actor Operator
+    participant Browser
+    participant Auth as routes/auth.py
+    participant DB as MySQL
+    participant Hub as Workspaces hub
+
+    Operator->>Browser: POST /login email and password
+    Browser->>Auth: form
+    Auth->>DB: find user by email
+    Auth->>Auth: bcrypt check_password
+    alt password does not match
+        Auth-->>Browser: login page plus error flash
+    else password matches
+        Auth->>Browser: login_user sets session cookie
+        Auth-->>Browser: redirect /workspaces
+        Browser->>Hub: GET /workspaces
+        Hub->>DB: memberships for this user
+        Hub-->>Browser: sector cards
+        Operator->>Browser: open a sector
+        Browser->>Hub: GET /workspaces/id/select
+        Hub->>Browser: session active_workspace_id
+        Hub-->>Browser: redirect dashboard
+    end
 ```
-Open **`http://127.0.0.1:5000`** in your browser.
 
----
+Registration creates a user, hashes the password with bcrypt, signs them in, and sends them to the hub. The first account becomes a global head. Later accounts become global engineers. If the form carried an invite code, the new user is added to that workspace as an engineer and lands on the dashboard instead.
 
-## Production Deployment
+Logout is `GET /logout`. It clears the login session and returns to the sign-in page.
 
-The project includes a `Procfile` configured for Gunicorn WSGI servers:
-```bash
-gunicorn app:app
+Password reset does not store a random token column. `services/crypto.py` derives a Fernet key from `SECRET_KEY`. Forgot-password encrypts `user_id:timestamp`. The reset page decrypts it with a one-hour TTL. If SMTP is configured, the link is emailed. If it is not, the link is shown on the forgot-password page so a demo still works. The only stored secret is `users.password_hash`.
+
+## Creating a defect
+
+Only a head, manager, or engineer may open `/defects/add`. A viewer is rejected. The form needs an asset in the active workspace, a description, a priority (`Low`, `Medium`, `High`, `Critical`), and a status (`Open`, `In Progress`, `Resolved`).
+
+```mermaid
+sequenceDiagram
+    actor Engineer
+    participant Route as defects.add_defect
+    participant DB as MySQL
+
+    Engineer->>Route: POST /defects/add
+    Route->>Route: require login, approval, role
+    Route->>Route: read active_workspace_id
+    Route->>DB: confirm asset exists
+    Route->>DB: insert defects row
+    Route->>DB: insert defect_status_logs row
+    Note over DB: old_status is empty, new_status is the form status, comment is Defect created
+    Route-->>Engineer: redirect /defects plus success flash
 ```
-For production configurations:
-- Set `FLASK_DEBUG=False`.
-- Adjust database connection pool parameters via `DB_POOL_SIZE` and `DB_MAX_OVERFLOW`.
-- If running multiple web workers, set `ENABLE_SCHEDULER=False` on worker nodes and run a dedicated scheduler worker to avoid duplicate reminder emails.
 
----
+Editing a defect writes another log row with the previous status, the new status, and the comment from the form. Deleting is limited to a head or manager, checked against the workspace role and the global role. Status-log rows are removed with the defect because the relationship uses `cascade="all, delete-orphan"`.
+
+The dashboard counts open work, overdue items, and what was resolved today. `/search-defects?q=` matches an asset name or a defect id, then redirects to the open ledger. `scope=resolved` sends the same search to the history page.
+
+## Roles
+
+There are two role columns.
+
+- `users.role` is the global role. The first registered account becomes `head`. Later registrations become `engineer`.
+- `workspace_members.role` is the role inside one sector: `head`, `manager`, `engineer`, or `viewer`.
+
+`@role_required` in `utils/auth.py` checks the global role. The delete-defect view and the sidebar check the workspace role first.
+
+| Action | Who can do it |
+| --- | --- |
+| See dashboard, defects, assets, settings | Any approved user |
+| Add or edit a defect | Global head, manager, or engineer |
+| Delete a defect | Workspace head or manager, or global head or manager |
+| Manage Sector Crew page | Global head, or workspace head or manager |
+| Approve, reject, or change a global role | Global head |
+| Change a workspace member's role or remove them | Any logged-in user who is not acting on themselves |
+| Regenerate an invite code | Workspace head |
+| Save SMTP settings or send a test email | Anyone whose global role is not `viewer` |
+
+Joining with a code creates a workspace membership with role `engineer` and `is_approved` set.
+
+## Email and the reminder clock
+
+SMTP is not hard-coded to one inbox. The Settings page writes `app_settings`. `reload_mail_config()` copies those keys into `app.config` and calls `mail.init_app`. The password is stored with Fernet. If decryption fails, the raw value is kept so an older plaintext row still works.
+
+```mermaid
+sequenceDiagram
+    participant Clock as APScheduler
+    participant Job as run_reminders_for_user
+    participant Mail as email_service
+    participant SMTP as SMTP server
+
+    Note over Clock: Started when ENABLE_SCHEDULER is true
+    Clock->>Job: cron fires for one user id
+    Job->>Mail: reload_mail_config
+    alt MAIL_USERNAME is empty
+        Job-->>Clock: return, nothing is sent
+    else SMTP username is set
+        Job->>Job: load enabled DEFECT_SUMMARY reminder
+        Job->>Job: load defects assigned to the user that are not Resolved
+        Job->>Mail: send_reminder_email
+        Mail->>SMTP: message lists DFT-id, asset, priority, due date
+    end
+```
+
+Each user has at most one reminder row, enforced by `UNIQUE(user_id, type)`. Frequency is daily, weekly, or monthly, with an hour and minute. Saving the form calls `schedule_user_reminder()`, which replaces the cron job `reminder_user_<id>`. On process start, `bootstrap_all_user_schedules()` re-registers every enabled reminder, because APScheduler's default store is memory and jobs disappear when the process stops. In Docker, a file lock keeps that clock in a single gunicorn worker.
+
+`send_test_email()` is the send-test action on the settings page. It refuses to run until both server and username are saved, then builds a short message that includes the host, port, and encryption mode. `send_reminder_email()` does nothing when `MAIL_USERNAME` is empty, which is the normal state of a fresh demo.
+
+## Data model
+
+There are eleven tables. MySQL InnoDB stores them. A defect insert and its first status log commit in one SQLAlchemy transaction. Priority and status are limited by check constraints. Foreign keys tie equipment, people, and workspaces together. Passwords are bcrypt hashes.
+
+```mermaid
+erDiagram
+    USERS ||--o{ WORKSPACE_MEMBERS : joins
+    WORKSPACES ||--o{ WORKSPACE_MEMBERS : has
+    WORKSPACES ||--o{ LOCATIONS : contains
+    WORKSPACES ||--o{ ASSETS : owns
+    WORKSPACES ||--o{ DEFECTS : tracks
+    LOCATION_TYPES ||--o{ LOCATIONS : classifies
+    LOCATIONS ||--o{ LOCATIONS : parent
+    LOCATIONS ||--o{ ASSETS : sites
+    ASSET_TYPES ||--o{ ASSETS : classifies
+    ASSETS ||--o{ ASSETS : parent
+    ASSETS ||--o{ DEFECTS : fails
+    USERS ||--o{ DEFECTS : creates
+    USERS ||--o{ DEFECTS : assigned
+    USERS ||--o{ DEFECT_STATUS_LOGS : writes
+    DEFECTS ||--o{ DEFECT_STATUS_LOGS : history
+    USERS ||--o{ REMINDERS : schedules
+    APP_SETTINGS {
+        string key PK
+        string value
+    }
+```
+
+| Table | What it stores |
+| --- | --- |
+| `users` | Username, email, bcrypt `password_hash`, global `role`, `is_approved`, timestamps |
+| `workspaces` | Sector name, unique invite code, creator |
+| `workspace_members` | User, workspace, sector role, approval flag. Unique on `(workspace_id, user_id)` |
+| `location_types` | Region, Substation, Bay |
+| `locations` | Name, type, parent location, workspace |
+| `asset_types` | Transformer, Circuit Breaker, Cooling Fan, and types added from the form |
+| `assets` | Name, type, location, parent asset, workspace |
+| `defects` | Asset, creator, assignee, priority, status, description, reported time, expected resolution, resolved time |
+| `defect_status_logs` | Old status, new status, comment, author, time |
+| `reminders` | One `DEFECT_SUMMARY` schedule per user |
+| `app_settings` | SMTP and other runtime key-value settings. Not tied to a workspace |
+
+`app_settings` holds the mail server, port, username, sender, and the encrypted password. Reminders are personal, not per workspace.
+
+## Where the code lives
+
+| Path | What it owns |
+| --- | --- |
+| `app.py` | Application factory, workspace context, local startup |
+| `config.py` | `SECRET_KEY`, `DATABASE_URL`, mail defaults, pool settings |
+| `extensions.py` | Shared SQLAlchemy, CSRF, bcrypt, mail, login, and scheduler objects |
+| `gunicorn.conf.py` | Container startup: wait for MySQL, create tables, seed, start one reminder clock |
+| `routes/` | HTTP endpoints |
+| `models/` | The eleven tables |
+| `utils/auth.py` | Login loader, `@approved_required`, `@role_required` |
+| `utils/queries.py` | Defect lists, search, time windows |
+| `services/email_service.py` | Load SMTP settings and send test or reminder mail |
+| `services/crypto.py` | Fernet key derived from `SECRET_KEY` |
+| `services/scheduler_service.py` | Cron jobs that send reminder mail |
+| `cli/commands.py` | `flask seed-db` and `flask reset-db` |
+| `templates/` | Pages. `base.html` is the shell. `components/sidebar.html` is the nav. `components/logo.html` is the mark |
+| `static/css/powergrid.css` | Light and dark theme on top of Tabler |
+| `static/img/powergrid-logo.png` | Logo used by the app and this README |
+| `tests/` | Route and email tests |
+| `Dockerfile.backend` | Python image for gunicorn |
+| `Dockerfile.frontend` | nginx image that serves `static/` |
+| `docker-compose.yml` | frontend, backend, and MySQL |
+| `Makefile` | `make`, `make test`, `make up`, `make down` |
+| `Procfile` | `gunicorn app:app` for a platform that reads a Procfile |
+
+```
+powergrid-defect-priority-management-system/
+├── app.py
+├── config.py
+├── extensions.py
+├── gunicorn.conf.py
+├── Makefile
+├── docker-compose.yml
+├── Dockerfile.backend
+├── Dockerfile.frontend
+├── docker/frontend/nginx.conf
+├── Procfile
+├── requirements.txt
+├── cli/
+├── models/
+├── routes/
+├── services/
+├── utils/
+├── templates/
+│   └── components/
+│       ├── logo.html
+│       ├── navbar.html
+│       └── sidebar.html
+├── static/
+│   ├── css/powergrid.css
+│   └── img/powergrid-logo.png
+└── tests/
+    ├── conftest.py
+    ├── test_endpoints.py
+    └── test_email_service.py
+```
 
 ## Author
 
-**Tejbir Singh**
-[![GitHub](https://img.shields.io/badge/GitHub-Tejbir7-181717?style=flat&logo=github)](https://github.com/Tejbir7)
-
----
+Tejbir Singh, [Tejbir7](https://github.com/Tejbir7)
 
 ## License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+Copyright (c) 2026 Tejbir Singh.
+
+This project is licensed under the MIT License. The permission covers the application source and the project logo at `static/img/powergrid-logo.png`, which is the yellow-free form of `power_grid.png`. Both files ship in this repository under that license. See [LICENSE](LICENSE) for the full text.
