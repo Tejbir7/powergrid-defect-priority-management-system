@@ -6,9 +6,7 @@
 <div class="container-tight py-4" style="max-width: 520px; margin: 0 auto;">
     <div class="text-center mb-4">
         <a href="{{ url_for('workspace.workspaces_hub') }}" class="navbar-brand navbar-brand-autodark">
-            <svg xmlns="http://www.w3.org/2000/svg" class="icon text-primary me-2" width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M7 2v11h3v9l7-12h-4l4-8z"/>
-            </svg>
+            {% include "components/logo.html" %}
             <span class="h2 fw-bold">PowerGrid Central</span>
         </a>
     </div>

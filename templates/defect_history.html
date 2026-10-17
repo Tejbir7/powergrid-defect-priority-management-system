@@ -82,7 +82,7 @@
             <h3 class="card-title mb-0">{{ selected_defect.asset.asset_name }}</h3>
             <span class="badge bg-blue-lt">{{ selected_defect.asset.asset_type.name }}</span>
             {% if selected_defect.asset.is_component %}
-            <span class="badge bg-purple-lt">↳ Component of {{ selected_defect.asset.parent_name }}</span>
+            <span class="badge bg-purple-lt">Part of {{ selected_defect.asset.parent_name }}</span>
             {% endif %}
         </div>
         <div class="d-flex align-items-center gap-2">
@@ -221,7 +221,7 @@
                         <div class="text-muted small">
                             <span class="badge bg-light text-dark">{{ defect.asset.asset_type.name }}</span>
                             {% if defect.asset.is_component %}
-                            <span class="badge bg-purple-lt">↳ Part of {{ defect.asset.parent_name }}</span>
+                            <span class="badge bg-purple-lt">Part of {{ defect.asset.parent_name }}</span>
                             {% endif %}
                         </div>
                     </td>

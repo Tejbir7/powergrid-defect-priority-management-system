@@ -157,7 +157,7 @@ def login():
         )
         if pending_count:
             flash(
-                f"⚠️ You have {pending_count} pending defect(s) assigned to you.",
+                f"You have {pending_count} pending defect(s) assigned to you.",
                 "reminder",
             )
 

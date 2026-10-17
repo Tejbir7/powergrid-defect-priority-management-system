@@ -55,9 +55,9 @@
                                 <option value="{{ a.id }}" data-location="{{ a.location.full_path if a.location else 'Site' }}"
                                     {% if (defect and defect.asset_id == a.id) or (selected_asset_id and selected_asset_id == a.id) %}selected{% endif %}>
                                     {% if a.is_component %}
-                                    ↳ {{ a.asset_name }} ({{ a.asset_type.name }} &bull; Component of {{ a.parent.asset_name }})
+                                    {{ a.asset_name }} ({{ a.asset_type.name }}, part of {{ a.parent.asset_name }})
                                     {% else %}
-                                    ⚡ {{ a.asset_name }} ({{ a.asset_type.name }})
+                                    {{ a.asset_name }} ({{ a.asset_type.name }})
                                     {% endif %}
                                 </option>
                                 {% endfor %}

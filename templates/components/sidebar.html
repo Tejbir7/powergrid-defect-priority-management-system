@@ -3,34 +3,19 @@
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
-        <a class="navbar-brand py-3" href="{{ url_for('dashboard') }}">
-            <span class="navbar-brand-icon me-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon text-primary" width="26" height="26" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M7 2v11h3v9l7-12h-4l4-8z"/>
-                </svg>
-            </span>
-            <span class="navbar-brand-title fw-bold">PowerGrid</span>
+        <a class="navbar-brand pg-brand" href="{{ url_for('dashboard') }}">
+            {% include "components/logo.html" %}
+            <span class="navbar-brand-title">PowerGrid</span>
         </a>
 
-        {# ── Active Workspace Badge ── #}
         {% if current_workspace %}
-        <div class="p-2 mb-2 rounded bg-body-tertiary border w-100 d-none d-lg-block">
-            <div class="d-flex justify-content-between align-items-center">
-                <span class="text-muted text-uppercase fw-semibold" style="font-size: 0.68rem; letter-spacing: 0.05em;">Current Sector</span>
-                <a href="{{ url_for('workspace.workspaces_hub') }}" class="small text-primary fw-medium text-decoration-none">⇄ Switch</a>
+        <div class="pg-sector d-none d-lg-block">
+            <div class="pg-sector-top">
+                <span class="pg-sector-label">Current sector</span>
+                <a class="pg-sector-switch" href="{{ url_for('workspace.workspaces_hub') }}">Switch</a>
             </div>
-            <div class="fw-bold text-truncate mt-1" style="font-size: 0.84rem;">
-                {{ current_workspace.name }}
-            </div>
-            <div class="mt-1">
-                <span class="badge badge-sm
-                    {% if current_workspace_role == 'head' %}bg-purple
-                    {% elif current_workspace_role == 'manager' %}bg-azure
-                    {% elif current_workspace_role == 'engineer' %}bg-green
-                    {% else %}bg-secondary{% endif %}">
-                    {{ (current_workspace_role or current_user.role) | title }}
-                </span>
-            </div>
+            <div class="pg-sector-name">{{ current_workspace.name }}</div>
+            <div class="pg-sector-role">{{ (current_workspace_role or current_user.role) | title }}</div>
         </div>
         {% endif %}
 
@@ -138,33 +123,19 @@
                 </li>
             </ul>
 
-            {# ── User info + Logout ── #}
-            <div class="mt-auto pt-3 border-top">
-                <div class="d-flex align-items-center gap-2 px-2 mb-2">
-                    <span class="avatar avatar-sm bg-blue-lt text-uppercase fw-bold">
-                        {{ current_user.username[:2] }}
-                    </span>
-                    <div style="min-width:0;">
-                        <div class="fw-medium text-truncate" style="font-size:0.82rem;">{{ current_user.username }}</div>
-                        <div class="text-muted text-truncate" style="font-size:0.72rem;">
-                            <span class="badge badge-sm
-                                {% if current_workspace_role == 'head' %}bg-purple
-                                {% elif current_workspace_role == 'manager' %}bg-azure
-                                {% elif current_workspace_role == 'engineer' %}bg-green
-                                {% else %}bg-secondary{% endif %}">
-                                {{ (current_workspace_role or current_user.role) | title }}
-                            </span>
-                            &nbsp;{% if current_workspace %}{{ current_workspace.name }}{% else %}POWERGRID{% endif %}
-                        </div>
+            <div class="pg-sidebar-footer">
+                <div class="pg-userchip">
+                    <span class="pg-avatar">{{ current_user.username[:2] }}</span>
+                    <div class="pg-user-meta">
+                        <div class="pg-user-name">{{ current_user.username }}</div>
+                        <div class="pg-user-role">{{ (current_workspace_role or current_user.role) | title }}</div>
                     </div>
                 </div>
-                <a class="nav-link text-danger" href="{{ url_for('logout') }}">
-                    <span class="nav-link-icon d-inline-flex align-items-center me-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="icon text-danger" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
-                        </svg>
-                    </span>
-                    Logout
+                <a class="pg-logout" href="{{ url_for('logout') }}">
+                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                        <path fill="currentColor" d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+                    </svg>
+                    <span>Logout</span>
                 </a>
             </div>
         </div>
